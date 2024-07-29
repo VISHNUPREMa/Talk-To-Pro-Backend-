@@ -1,10 +1,14 @@
 import UserModel, { IUser } from '../models/userModel';
 import ProModel from '../models/proModel';
+import BookingModel from '../models/bookingModel';
+import TransactionModel from '../models/transactionModel' 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { format } from 'date-fns'
+import { FunctionReturnType } from '../helper/reusable';
 
 export class AdminRepository {
-    static async validateLogin(data: { email: string; password: string }): Promise<{ success: boolean; message: string;token?:string }> {
+    static async validateLogin(data: { email: string; password: string }): Promise<FunctionReturnType> {
         const { email, password } = data;
         
         try {
@@ -31,42 +35,45 @@ export class AdminRepository {
     }
 
 
-    static async getAllUsers():Promise<any>{
-        const allUsers = await UserModel.find({},{_id:0,userId:1,username:1,createdAt:1,isBlocked:1,email:1});
+    static async getAllUsers():Promise<FunctionReturnType>{
+try {
+    const allUsers = await UserModel.find({},{_id:0,userId:1,username:1,createdAt:1,isBlocked:1,email:1});
      
-        const usersWithProfilePics = await Promise.all(allUsers.map(async (user) => {
-            const profile = await ProModel.findOne({ userid: user.userId }, { _id: 0, profilepic: 1 });
-    
-        
-            const formattedCreatedAt = new Date(user.createdAt).toISOString().split('T')[0];
-    
-            return {
-                userId: user.userId,
-                username: user.username,
-                createdAt: formattedCreatedAt,
-                isBlocked: user.isBlocked,
-                email: user.email,
-                profilePic: profile ? profile.profilepic : null
-            };
-        }));
+    const usersWithProfilePics = await Promise.all(allUsers.map(async (user) => {
+        const profile = await ProModel.findOne({ userid: user.userId }, { _id: 0, profilepic: 1 });
 
-        return usersWithProfilePics
+    
+        const formattedCreatedAt = new Date(user.createdAt).toISOString().split('T')[0];
+
+        return {
+            userId: user.userId,
+            username: user.username,
+            createdAt: formattedCreatedAt,
+            isBlocked: user.isBlocked,
+            email: user.email,
+            profilePic: profile ? profile.profilepic : null
+        };
+    }));
+
+    return {success:true,data:usersWithProfilePics}
+} catch (error) {
+    console.log(error);
+    return {success:false,data:error}
+}
         
 
     }
 
 
 
-    static async blockUser(email: string): Promise<{ success: boolean; message: string }> {
+    static async blockUser(email: string): Promise<FunctionReturnType> {
         try {
-           
-
-            // Find the user by email
+        
             const user = await UserModel.findOne({ email });
             console.log("User:", user);
 
             if (user) {
-                // Update the user's isBlocked status
+           
                 user.isBlocked = true;
                 await user.save();
 
@@ -79,13 +86,13 @@ export class AdminRepository {
             
         } catch (error) {
             console.error('Error blocking user:', error);
-            return { success: false, message: 'Error blocking user.' };
+            return { success: false, message: 'Error blocking user.',data:error };
         }
     }
 
 
 
-    static async unblockUser(email: string): Promise<{ success: boolean; message: string }> {
+    static async unblockUser(email: string): Promise<FunctionReturnType> {
         try {
           
             const user = await UserModel.findOne({ email });
@@ -104,34 +111,39 @@ export class AdminRepository {
             }
         } catch (error) {
             console.error('Error unblocking user:', error);
-            return { success: false, message: 'Error unblocking user.' };
+            return { success: false, message: 'Error unblocking user.',data:error };
         }
     }
 
 
-    static async getAllpro():Promise<any>{
-        const allpro = await ProModel.find({},{_id:0,userid:1,email:1,profession:1,profilepic:1,isBlocked:1});
-        const professionalsWithUsernames = await Promise.all(allpro.map(async (pro) => {
-            const user = await UserModel.findOne({ userId: pro.userid }, { _id: 0, username: 1 });
-            return {
-               userid:pro.userid,
-                username: user ? user.username : null,
-                email: pro.email,
-                profession: pro.profession,
-                profilePic: pro.profilepic,
-                isBlocked:pro.isBlocked
+    static async getAllpro():Promise<FunctionReturnType>{
+   try {
+    const allpro = await ProModel.find({},{_id:0,userid:1,email:1,profession:1,profilepic:1,isBlocked:1});
+    const professionalsWithUsernames = await Promise.all(allpro.map(async (pro) => {
+        const user = await UserModel.findOne({ userId: pro.userid }, { _id: 0, username: 1 });
+        return {
+           userid:pro.userid,
+            username: user ? user.username : null,
+            email: pro.email,
+            profession: pro.profession,
+            profilePic: pro.profilepic,
+            isBlocked:pro.isBlocked
 
-            };
-        }));
+        };
+    }));
 
-        console.log("Professionals with usernames:", professionalsWithUsernames);
-        return professionalsWithUsernames
+    console.log("Professionals with usernames:", professionalsWithUsernames);
+    return {success:true , data:professionalsWithUsernames}
+    
+   } catch (error) {
+    return {success:false , data:error}
+   }
     
     }
 
 
 
-    static async blockpro(id: string): Promise<{ success: boolean; message: string }> {
+    static async blockpro(id: string): Promise<FunctionReturnType> {
         try {
            
             const pro = await ProModel.findOne({ userid:id });
@@ -156,7 +168,7 @@ export class AdminRepository {
     }
 
 
-    static async unblockpro(id: string): Promise<{ success: boolean; message: string }> {
+    static async unblockpro(id: string): Promise<FunctionReturnType> {
         try {
            
             const pro = await ProModel.findOne({ userid:id });
@@ -180,4 +192,144 @@ export class AdminRepository {
         }
     }
     
+
+    static async getAllbooking(): Promise<FunctionReturnType> {
+        try {
+            const allBookings = await BookingModel.aggregate([
+                {
+                  $project: {
+                    _id: 0,
+                    bookingId: 1,
+                    providedBy: 1,
+                    date: 1,
+                    slots: 1,
+                    amount:1
+                  }
+                },
+                {
+                  $lookup: {
+                    from: "users",
+                    localField: "providedBy",
+                    foreignField: "userId",
+                    as: "providerDetails"
+                  }
+                },
+                {
+                  $unwind: {
+                    path: "$providerDetails",
+                    preserveNullAndEmptyArrays: true
+                  }
+                },
+                {
+                  $lookup: {
+                    from: "users",
+                    localField: "slots.bookedBy",
+                    foreignField: "userId",
+                    as: "userDetails"
+                  }
+                },
+                {
+                  $unwind: {
+                    path: "$userDetails",
+                    preserveNullAndEmptyArrays: true
+                  }
+                },
+                {
+                  $addFields: {
+                    "slots.bookedBy": "$userDetails.username",
+                    "providedBy": "$providerDetails.username"
+                  }
+                },
+                {
+                  $unwind: "$slots" 
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    bookingId: 1,
+                    providedBy: 1,
+                    date: 1,
+                    time: "$slots.time",
+                    status: "$slots.status",
+                    bookedBy: "$slots.bookedBy",
+                    amount:1
+                  }
+                }
+              ]);
+              
+              
+              
+return {success:true,data:allBookings}              
+
+
+
+        } catch (error) {
+          console.log(error);
+          return {success:false,data:error}
+        }
+      }
+
+
+      static async getAlltransaction():Promise<FunctionReturnType>{
+        try {
+            const allTransactions = await TransactionModel.aggregate([
+                {
+                    $project: {
+                        _id: 0,
+                        __v: 0,
+                        transactionId: 0
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "from",
+                        foreignField: "userId",
+                        as: "fromBy"
+                    }
+                },
+                {
+                    $addFields: {
+                        fromBy: {
+                            $arrayElemAt: ["$fromBy.username", 0]
+                        }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "to",
+                        foreignField: "userId",
+                        as: "toBy"
+                    }
+                },
+                {
+                    $addFields: {
+                        toBy: {
+                            $arrayElemAt: ["$toBy.username", 0]
+                        }
+                    }
+                }
+            ]);
+            
+          
+            const formattedTransactions = allTransactions.map(transaction => ({
+                amount: transaction.amount,
+                time: transaction.time,
+                date: transaction.date,
+                modeOfPay: transaction.modeOfPay,
+                updatedAt: format(new Date(transaction.updatedAt), 'yyyy-MM-dd HH:mm:ss'),
+                fromBy: transaction.fromBy,
+                toBy: transaction.toBy
+            }));
+            
+     
+            return {success:true,data:formattedTransactions}
+            
+            
+        } catch (error) {
+            console.log(error);
+            return {success:true,data:error}
+        }
+      }
 }   

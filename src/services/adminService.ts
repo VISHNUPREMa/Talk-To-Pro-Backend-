@@ -1,50 +1,40 @@
 import { AdminRepository } from "../repository/adminReository";
+import { FunctionReturnType } from "../helper/reusable";
 
 
 export class  AdminService{
-    async validateLogin (data:{ email: string; password: string }): Promise<{ success: boolean; message: string; token?: string }> {
+    async validateLogin (data:{ email: string; password: string }): Promise<FunctionReturnType> {
         
         const response = await AdminRepository.validateLogin(data);
         return response
-        
-        
+
     }
 
-    async getAllUsers():Promise<any>{
+    async getAllUsers():Promise<FunctionReturnType>{
+
         const response = await AdminRepository.getAllUsers();
         return response
 
     }
 
 
-    async blockUser(email: string): Promise<{ success: boolean; message: string }> {
-        try {
+    async blockUser(email: string): Promise<FunctionReturnType> {
+
             const response = await AdminRepository.blockUser(email);
-           
-            
             return response;
-        } catch (error) {
-            console.error('Error in blockUser service:', error);
-            return { success: false, message: 'Error in blocking user.' };
-        }
+       
     }
 
 
-    async unblockUser(email: string): Promise<{ success: boolean; message: string }> {
-        try {
+    async unblockUser(email: string): Promise<FunctionReturnType> {
+
             const response = await AdminRepository.unblockUser(email);
-         
-            
             return response;
-        } catch (error) {
-            console.error('Error in blockUser service:', error);
-            return { success: false, message: 'Error in blocking user.' };
-        }
     }
 
 
 
-    async getAllpro():Promise<any>{
+    async getAllpro():Promise<FunctionReturnType>{
         const response = await AdminRepository.getAllpro();
         return response
 
@@ -52,32 +42,38 @@ export class  AdminService{
 
 
 
-    async blockpro(id: string): Promise<{ success: boolean; message: string }> {
-        try {
+    async blockpro(id: string): Promise<FunctionReturnType> {
+  
             const response = await AdminRepository.blockpro(id);
-            
-            
+    
             return response;
-        } catch (error) {
-            console.error('Error in blockUser service:', error);
-            return { success: false, message: 'Error in blocking user.' };
-        }
+     
     }
 
 
-    async unblockpro(id: string): Promise<{ success: boolean; message: string }> {
-        try {
+    async unblockpro(id: string): Promise<FunctionReturnType> {
+        
             const response = await AdminRepository.unblockpro(id);
             
             
             return response;
-        } catch (error) {
-            console.error('Error in blockUser service:', error);
-            return { success: false, message: 'Error in blocking user.' };
-        }
+       
     }
 
+async getAllbooking():Promise<FunctionReturnType>{
+
+        const response = await AdminRepository.getAllbooking();
+        return response
+   
+}
 
 
+
+async getAlltransaction():Promise<FunctionReturnType>{
+    
+        const response = await AdminRepository.getAlltransaction();
+        return response
+  
+}
 
 }

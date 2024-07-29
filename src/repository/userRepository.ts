@@ -1,12 +1,15 @@
 
 import UserModel, { IUser } from '../models/userModel';
 import ProModel from '../models/proModel';
-import jwt from 'jsonwebtoken';
+import jwt ,{ JwtPayload } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import sendEmailOtp from '../helper/emailService';
 import BookingModel from '../models/bookingModel';
 import TransactionModel from '../models/transactionModel';
 import { v4 as uuidv4 } from 'uuid';
+import { FunctionReturnType } from '../helper/reusable';
+import * as cron from 'node-cron';
+import webPush from '../helper/web-push'
 
 
 
@@ -38,31 +41,35 @@ export class UserRepository {
   }
 
 
-  static async verifyUser(email:string):Promise<any>{
+  static async verifyUser(email:string):Promise<FunctionReturnType>{
+   try {
     console.log("update  user details  with email:", email);
     const user = await UserModel.findOneAndUpdate({ email }, { isVerified: true}, { new: true });
-    return user;
+    return {success:true,message:"verify user",data:user,status:200}
+   } catch (error) {
+    return {success:false,data:error}
+   }
 
   }
 
-  static async validateLoginUser(email:string,password:string):Promise<any>{
+  static async validateLoginUser(email:string,password:string):Promise<FunctionReturnType>{
    try {
     const user = await UserModel.findOne({ email },{_id:0,userId:1,username:1,email:1,password:1,isBlocked:1,isServiceProvider:1});
 
 
     
     if (!user) {
-      return { error: 'User not found' };
+      return { success:false,message: 'User not found' };
     }
 
 
     const isValidPassword = await bcrypt.compare(password,user.password);
     if(!isValidPassword){
-      return { error: 'Invalid password' };
+      return { success:false,message: 'Invalid password' };
     }
 
     if(user.isBlocked){
-      return { error: 'User Blocked' };
+      return  { success:false,message: 'user blocked' };
     }
     
     const accessToken = jwt.sign(
@@ -88,47 +95,68 @@ export class UserRepository {
   
        
        
-    return { userInfo, accessToken , refreshToken  };
-    
+    return {success:true,data:{ userInfo, accessToken , refreshToken  }};
+          
     
    } catch (error) {
     console.error('Error validating user login:', error);
-     return null;
+     return {success:false,data:error}
     
    }
     
   }
 
 
-  static async googleAuthUser(userEmail:string):Promise<any>{
+  static async googleAuthUser(userEmail:string):Promise<FunctionReturnType>{
     try {
-      const user = await UserModel.findOne({ email:userEmail },{_id:0,username:1,email:1});
+      const user = await UserModel.findOne({ email:userEmail },{_id:0,userId:1,username:1,email:1,password:1,isBlocked:1,isServiceProvider:1});
       if(!user){
-        throw new Error('User not with same email in google account');
+        return {success:false,message:'User not with same email in google account'}
 
       }
 
-      const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET_KEY!, { expiresIn: '1h' });
-      return {user , token}
+      if(user.isBlocked){
+        return { success:false,message:'user blocked'};
+      }
       
+      const accessToken = jwt.sign(
+        { id: user.userId, email: user.email },
+        process.env.JWT_SECRET_KEY!,
+        { expiresIn: '1h' }
+      );
+  
+      const refreshToken = jwt.sign(
+        { id: user.userId, email: user.email },
+        process.env.JWT_REFRESH_SECRET_KEY!,
+        { expiresIn: '7d' }
+      );
       
+      const userInfo = {
+        username: user.username,
+        email: user.email,
+        isServiceProvider:user.isServiceProvider,
+        userid:user.userId
+    };
+    
       
+      return {success:true,data:{ userInfo, accessToken , refreshToken  }};
       
     } catch (error) {
-      
+      return{success:false,data:error}
     }
   }
 
 
-  static async  getAllProData():Promise<any>{
+  static async  getAllProData():Promise<FunctionReturnType>{
     try {
       const allProData = await ProModel.find({ isBlocked: false });
 
-      return allProData
+      return {success:true,data:allProData}
       
       
     } catch (error) {
       console.log(error);
+      return {success:false,data:error}
       
       
     }
@@ -136,7 +164,7 @@ export class UserRepository {
   }
 
 
-  static async forgetPasswordEmail(email:string): Promise<{ success: boolean; message: string; otp?: number  }>{
+  static async forgetPasswordEmail(email:string): Promise<FunctionReturnType>{
     try {
       const user = await UserModel.findOne({email});
       if(user){
@@ -144,7 +172,7 @@ export class UserRepository {
         await sendEmailOtp(email, this.otp);
         console.log(this.otp);
         
-        return { success: true, message: `user found otp sent successfully !!!`,otp: this.otp };
+        return { success: true, message: `user found otp sent successfully !!!`,data: this.otp };
       }else{
         return { success: false, message: `Invalid Email Address` };
       }
@@ -158,7 +186,7 @@ export class UserRepository {
   }
 
 
-  static async forgetPasswordOtp(otpValue:string,email:string): Promise<{ success: boolean; message: string  }>{
+  static async forgetPasswordOtp(otpValue:string,email:string): Promise<FunctionReturnType>{
     try {
       const sendotp = Number(otpValue)
       if(sendotp === this.otp){
@@ -179,7 +207,7 @@ export class UserRepository {
 
 
 
-  static async resetPassword(email:string,newPassword:string): Promise<{ success: boolean; message: string  }>{
+  static async resetPassword(email:string,newPassword:string): Promise<FunctionReturnType>{
     try {
       const user = await UserModel.findOne({email:email},{_id:1,email:1,password:1,isBlocked:1});
       if(!user){
@@ -209,7 +237,7 @@ export class UserRepository {
   }
 
 
-  static async getAvailableSlots(id:string):Promise<{success:boolean,data?:any}>{
+  static async getAvailableSlots(id:string):Promise<FunctionReturnType>{
     try {
       const availableSlots = await BookingModel.find({providedBy:id},{_id:0,date:1,slots:1,amount:1,bookingId:1});
       
@@ -223,9 +251,13 @@ export class UserRepository {
 
 
  
-static async bookSlot(data:{userid:string,amount:string,selectedDate:string,selectedTimeSlot:string,proId:string}): Promise<{success:boolean,message:string}> {
+static async bookSlot(data:{userid:string,amount:string,selectedDate:string,selectedTimeSlot:string,proId:string}): Promise<FunctionReturnType> {
   try {
     const { userid, amount, selectedDate, selectedTimeSlot, proId } = data;
+    console.log([ userid, amount, selectedDate, selectedTimeSlot, proId]);
+    
+
+    
     const formattedDate = new Date(selectedDate).toISOString().split('T')[0];
 
     const bookingData = await BookingModel.findOne({
@@ -246,7 +278,8 @@ static async bookSlot(data:{userid:string,amount:string,selectedDate:string,sele
         {
           $set: {
             "slots.$.status": "Booked",
-            "slots.$.bookedBy":userid
+            "slots.$.bookedBy":userid,
+            "slots.$.amount":amount
           },
         }
       );
@@ -258,16 +291,17 @@ static async bookSlot(data:{userid:string,amount:string,selectedDate:string,sele
           transactionId: uuidv4(),
           from:userid,
           to:bookingData.providedBy,
-          amount:bookingData.amount,
           time:selectedTimeSlot,
           date:formattedDate,
-          modeOfPay:'PayPal'
+          modeOfPay:'PayPal',
+          amount:amount
 
         });
         console.log("transactionData : ",transactionData);
         
         
         console.log(`Slot at ${selectedTimeSlot} successfully booked.`);
+        // scheduleReminder(userid, formattedDate, selectedTimeSlot);
         return {success : true , message:`Slot at ${selectedTimeSlot} successfully booked.` }
       } else {
         console.log(`No slot found with the time ${selectedTimeSlot}.`);
@@ -284,7 +318,7 @@ static async bookSlot(data:{userid:string,amount:string,selectedDate:string,sele
 }
 
 
-static async userBookings(userId:string):Promise<any>{
+static async userBookings(userId:string):Promise<FunctionReturnType>{
   try {
     const slicedBookings = await BookingModel.aggregate([
      
@@ -319,32 +353,16 @@ static async userBookings(userId:string):Promise<any>{
       }}
     ]).exec();
 
-    console.log(slicedBookings);
+   
     if(slicedBookings){
       return{success:true,data:slicedBookings}
+    } else {
+      return { success: false, data: 'No bookings found' };
     }
     
   } catch (error) {
-    
+    return{success:false,data:error}
   }
-}
-
-
-static async userTransactions(userId:string):Promise<any>{
-  try {
-    const transactions = await TransactionModel.find({
-      $or: [
-        { from: userId },
-        { to: userId }
-      ]
-    });
-    
-    console.log('Transactions found:', transactions);
-    
-  } catch (error) {
-    
-  }
-}
   
 }
 
@@ -352,3 +370,134 @@ static async userTransactions(userId:string):Promise<any>{
 
 
 
+static async userTransactions(userId: string): Promise<FunctionReturnType> {
+  try {
+   
+    const transactions = await TransactionModel.find({
+      $or: [
+        { from: userId },
+        { to: userId }
+      ]
+    },{_id:0,transactionId:0,__v:0});
+
+   
+    const userIds = new Set<string>();
+    transactions.forEach(transaction => {
+      if (transaction.from !== userId) {
+        userIds.add(transaction.from);
+      }
+      if (transaction.to !== userId) {
+        userIds.add(transaction.to);
+      }
+    });
+
+    const users = await UserModel.find({ userId: { $in: Array.from(userIds) } }).select('userId username');
+    const userMap = new Map<string, string>();
+    users.forEach(user => {
+      userMap.set(user.userId, user.username);
+    });
+
+    const updatedTransactions = transactions.map(transaction => ({
+      ...transaction.toObject(),
+      fromUsername: transaction.from === userId ? 'You' : userMap.get(transaction.from) || 'Unknown',
+      toUsername: transaction.to === userId ? 'You' : userMap.get(transaction.to) || 'Unknown'
+    }));
+
+   
+    return {success:true,data:updatedTransactions};
+  } catch (error) {
+    console.error("Error in userTransactions method:", error);
+    return{success:false,data:error}
+  }
+}
+
+
+
+static async verifyToken(refreshToken:string):Promise<FunctionReturnType>{
+  try {
+   
+    
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET_KEY!)as JwtPayload;
+    const user = await UserModel.findOne(decoded.userId);
+    if (!user) {
+      return { success: false, message: 'User not found' };
+    }
+  
+    const accessToken = jwt.sign(
+      { id: user.userId, email: user.email },
+      process.env.JWT_SECRET_KEY!,
+      { expiresIn: '1h' }
+    );
+
+ 
+    
+    return {success:true,data:accessToken}
+    
+  } catch (error) {
+    return {success:false,data:error}
+  }
+}
+
+
+
+static async userSubscription(id:string,subscription: {endpoint: string;keys: {p256dh: string;auth: string;}}):Promise<FunctionReturnType>{
+  try {
+    const user = await UserModel.findOne({userId:id});
+   if(user){
+    user.subscriptions = user.subscriptions || [];
+
+    const subscriptionExists = user.subscriptions.some(
+      (sub) =>
+        sub.endpoint === subscription.endpoint &&
+        sub.keys.p256dh === subscription.keys.p256dh &&
+        sub.keys.auth === subscription.keys.auth
+    );
+
+    if (!subscriptionExists) {
+      user.subscriptions.push(subscription);
+      await user.save();
+      return { success: true, message: 'Subscription saved successfully' };
+    } else {
+      return{ success: true, message: 'Subscription already exists' };
+    }
+   }else
+   return {success : false,message:'no user found'}
+  } catch (error) {
+    return {success : false,data:error}
+  }
+}
+
+}
+
+
+
+
+
+
+
+
+// const scheduleReminder = (userid: string, date: string, time: string): void => {
+//   const reminderTime = new Date(date + ' ' + time);
+//   console.log("reminder : ",reminderTime);
+  
+//   reminderTime.setMinutes(reminderTime.getMinutes() - 5);
+
+//   const reminderCron = `${reminderTime.getMinutes()} ${reminderTime.getHours()} ${reminderTime.getDate()} ${reminderTime.getMonth() + 1} *`;
+//    console.log("reminderCron : ",reminderCron);
+   
+//   cron.schedule(reminderCron, async () => {
+//     const user = await UserModel.findOne({ userId: userid }, { subscriptions: 1, email: 1 });
+//     console.log("user : ",user);
+    
+//     if (user && user.subscriptions) {
+//       user.subscriptions.forEach((subscription: any) => {
+//         const payload = JSON.stringify({
+//           title: 'Slot Booking Reminder',
+//           message: `Your slot booking is scheduled at ${time} on ${date}`,
+//           url: 'http://localhost:5173/'
+//         });
+//         webPush.sendNotification(subscription, payload);
+//       });
+//     }
+//   });
+// };

@@ -16,9 +16,13 @@ router.post('/forgetpassword/verifyotp',userController.forgetPasswordOtp.bind(us
 router.post('/forgetpassword/resetpassword',userController.resetPassword.bind(userController))
 router.get('/cards', userController.getCards.bind(userController));  
 router.post('/getavailableslot',userController.getAvailableSlots.bind(userController));
-router.patch('/bookslot',userController.bookSlot.bind(userController));
+router.post('/bookslot',userController.bookSlot.bind(userController));
 router.post('/userbooking',userController.userBookings.bind(userController));
-router.post('/transaction',userController.userTransactions.bind(userController))                                  
+router.post('/transaction',userController.userTransactions.bind(userController));
+router.post('/verifytoken',userController.verifyToken.bind(userController));
+router.post('/subscription',userController.userSubscription.bind(userController));
+router.post('/notification',userController.userNotification.bind(userController))
+                                 
 
 
 export default router

@@ -3,6 +3,8 @@ import ProModel from '../models/proModel';
 import BookingModel from '../models/bookingModel';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { decode } from 'punycode';
+import { FunctionReturnType } from '../helper/reusable';
 
 interface Slot {
   time: string;
@@ -26,10 +28,14 @@ interface SaveSlotsResult {
 
 export class ProRepository {
 
-  static async registerPro(data: any): Promise<any> {
+  static async registerPro(data: any): Promise<FunctionReturnType> {
     try {
       const { token, profession, domains, experience, languages, description, profilePic } = data;
-      const decoded: any = jwt.verify(token, process.env.JWT_SECRET_KEY!);
+      console.log([token, profession, domains, experience, languages, description, profilePic]);
+      
+      const decoded: any = jwt.verify(token,process.env.JWT_REFRESH_SECRET_KEY!);
+      console.log(decode);
+      
       const { id, email } = decoded;
 
       const user = await UserModel.findOne({ email });
@@ -51,48 +57,83 @@ export class ProRepository {
         user.isServiceProvider = true;
         await user.save();
 
-        return newPro;
+        return {success:true,data:newPro};
       } else {
         console.log('Profile already registered as a service provider!');
-        return { error: 'Profile already registered as a service provider!' };
+        return {success:false, message: 'Profile already registered as a service provider!' };
       }
     } catch (error) {
       console.log("Error in ProRepository registerPro method: ", error);
-      
+      return {success:false, data:error };
     }
   }
 
-  static async saveAvailableSlots(data: any): Promise<{success:boolean,message:string}> {
+
+
+
+  static async saveAvailableSlots(data: any): Promise<FunctionReturnType> {
     try {
-      console.log("data in repository : ", data);
-      const { date, slots, id,amount } = data;
+      const { date, slots, id, amount } = data;
+    
+      const dateToCheck = new Date(date);
+      const formattedDate = dateToCheck.toISOString().split('T')[0]; // YYYY-MM-DD
+  
+   
+      const bookingsOnDate = await BookingModel.find({
+        providedBy:id,
+        date: { $regex: `^${formattedDate}` }
+      });
+  
       const transformedSlots: Slot[] = slots.map((slot: string) => ({
         time: slot,
-        status: 'Pending'  
-      }));
-      
-      console.log("transformedSlots : ", transformedSlots);
-      
-      const bookingId = uuidv4();
-
-      const bookingData = {
-        bookingId: bookingId,
-        providedBy: id,
-        date: date,
-        slots: transformedSlots,
-        createdAt: Date.now(),
+        status: 'Pending',
         amount:amount
-      };
-
-      const booking = await BookingModel.create(bookingData);
-      return { success: true, message: 'Allocate slot successfully !!!' }
+      }));
+             
+      if (bookingsOnDate.length > 0) {
+       
+       
+        for (const booking of bookingsOnDate) {
+        
+          const existingSlots = booking.slots.map((s: Slot) => s.time);
+          const newSlots = transformedSlots.filter(s => !existingSlots.includes(s.time));
+  
+        
+          if (newSlots.length > 0) {
+            booking.slots.push(...newSlots);
+            await booking.save(); 
+          }
+        }
+  
+        console.log('Updated existing bookings with new slots.');
+      } else {
+        
+        console.log('No bookings found for the date. Creating a new booking.');
+  
+        const bookingId = uuidv4();
+        const bookingData = {
+          bookingId: bookingId,
+          providedBy: id,
+          date: date,
+          slots: transformedSlots,
+          createdAt: new Date(),
+        };
+  
+        await BookingModel.create(bookingData);
+      }
+  
+      return { success: true, message: 'Allocate slot successfully !!!' };
     } catch (error) {
       console.log("Error in ProRepository saveAvailableSlots method: ", error);
-      return { success: false, message: 'Error !!!' }
+      return { success: false, message: 'Error !!!' };
     }
   }
+  
+  
+  
 
-  static async getAllocatedSlot(proId: string): Promise<{success: boolean, data?: any}> {
+
+  static async getAllocatedSlot(proId: string): Promise<FunctionReturnType> {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -114,7 +155,7 @@ export class ProRepository {
       return { success: true, data: preAllocatedSlot };
     } catch (error) {
       console.log("Error in ProRepository getAllocatedSlot method: ", error);
-      return { success: false };
+      return { success: false ,data:error};
     }
   }
   

@@ -1,5 +1,13 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+interface ISubscription {
+    endpoint: string;
+    keys: {
+      p256dh: string;
+      auth: string;
+    };
+  }
+
 export interface IUser extends Document {
     username: string;
     userId: string;
@@ -9,7 +17,8 @@ export interface IUser extends Document {
     isServiceProvider: boolean;
     isVerified: boolean;
     isBlocked: boolean;
-    createdAt: Date;  
+    createdAt: Date;
+    subscriptions?: ISubscription[];  
 }
 
 const userSchema = new Schema<IUser>({
@@ -49,7 +58,14 @@ const userSchema = new Schema<IUser>({
     createdAt: {
         type: Date,
         default: Date.now  
-    }
+    },
+    subscriptions: [{
+        endpoint: { type: String },
+        keys: {
+          p256dh: { type: String },
+          auth: { type: String },
+        },
+      }]
 });
 
 const UserModel = mongoose.model<IUser>('User', userSchema);

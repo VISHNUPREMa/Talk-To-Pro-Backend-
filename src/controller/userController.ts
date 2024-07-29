@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/userService";
+import { UserNotificationService } from "../services/userNotificationService";
 
 
 class UserController {
   private userService: UserService;
+  private userNotificationService: UserNotificationService;
 
-  constructor(userService: UserService) {
+  constructor(userService: UserService,userNotificationService: UserNotificationService) {
     this.userService = userService;
+    this.userNotificationService = userNotificationService;
   }
 
   async signupUser(req: Request, res: Response) {
@@ -31,7 +34,7 @@ class UserController {
     try {
       const { otpValue, email } = req.body;
       const response = await this.userService.signupOtp(otpValue, email);
-
+      
       res.status(200).json({
         message: response,
       });
@@ -53,9 +56,9 @@ try {
   const data = await this.userService.loginUserData(email,password);
   console.log("data : ",data);
   
-  if (data.error) {
-    const status = data.error === 'User not found' ? 404 : 401;
-    return res.status(status).json({ error: data.error });
+  if (data.message=== 'User not found') {
+    const status = 404 || 401;
+    return res.status(status).json({ error: data });
   }
   
  
@@ -152,6 +155,8 @@ try {
   async bookSlot(req:Request , res:Response){
     try {
       const data  = req.body;
+      console.log("ddata in controller : ",data);
+      
       
       
       const response = await this.userService.bookSlot(data)
@@ -179,9 +184,52 @@ try {
     try {
       const {userId} = req.body;
       const response = await this.userService.userTransactions(userId)
-      return response
+      res.json(response)
     } catch (error) {
       
+    }
+  }
+
+
+  async verifyToken(req:Request , res:Response){
+    try {
+      const {refreshToken} = req.body;
+   
+     
+      const response = await this.userService.verifyToken(refreshToken);
+     res.status(200).json(response)
+      
+      
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+
+
+  async userSubscription(req:Request , res:Response){
+    try {
+      const {id,subscription} = req.body;
+     
+      const response = await this.userService.userSubscription(id,subscription)
+      res.json(response)
+      
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+
+  async userNotification(req: Request, res: Response) {
+    try {
+     
+      const { id } = req.body;
+      const response = await this.userNotificationService.userNotification(id);
+      res.json(response);
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -190,7 +238,8 @@ try {
 
 }
 
-export const userController = new UserController(new UserService());
+export const userController = new UserController(new UserService(), new UserNotificationService());
+
 
 
 

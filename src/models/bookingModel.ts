@@ -4,6 +4,7 @@ export interface Slot {
   time: string;
   status: string;
   bookedBy?: string;
+  amount?:string
 }
 
 export interface IBooking extends Document {
@@ -15,7 +16,7 @@ export interface IBooking extends Document {
   bookingFee?: number;
   createdAt: Date;
   updatedAt: Date;
-  amount:string
+ 
 }
 
 const slotSchema = new Schema<Slot>({
@@ -30,6 +31,9 @@ const slotSchema = new Schema<Slot>({
   },
   bookedBy: {
     type: String,
+  },
+  amount: {
+    type: String, 
   },
 }, { _id: false });  
   
@@ -64,9 +68,7 @@ const bookingSchema = new Schema<IBooking>({
     type: Date,
     default: Date.now,
   },
-  amount:{
-    type:String,
-  }
+  
 });
 
 const BookingModel = mongoose.model<IBooking>('Booking', bookingSchema);

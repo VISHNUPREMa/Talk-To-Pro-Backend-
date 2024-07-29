@@ -11,6 +11,9 @@ router.post('/unblockuser',adminController.unblockUser.bind(adminController))
 router.get('/allpro',adminController.getAllpro.bind(adminController));
 router.post('/blockpro',adminController.blockpro.bind(adminController));
 router.post('/unblockpro',adminController.unblockpro.bind(adminController));
+router.get('/allbooking',adminController.getAllbooking.bind(adminController));
+router.get('/alltransaction',adminController.getAlltransaction.bind(adminController));
+
 
 
 export default router;

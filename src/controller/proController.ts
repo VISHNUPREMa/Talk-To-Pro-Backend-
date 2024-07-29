@@ -12,16 +12,15 @@ class ProController{
 
     try {
         const data = { ...req.body, profilePic: req.file ? req.file.filename : null };
-
-  
+     
         const pro = await this.proService.register(data);
        
         if (!pro) {
             return res.status(400).json({ error: 'Failed to create professional.' });
           }
     
-          if (pro.error !== undefined) {
-            return res.status(400).json({ error: pro.error });
+          if (pro.message !== undefined) {
+            return res.status(400).json({ error: pro.data });
           }
     
           res.status(201).json(pro);

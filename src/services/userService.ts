@@ -2,11 +2,13 @@ import {UserRepository} from "../repository/userRepository";
 import bcrypt from 'bcrypt';
 import sendEmailOtp from "../helper/emailService";
 import { v4 as uuidv4 } from 'uuid';
+import { FunctionReturnType } from "../helper/reusable";
+
 
 
 export class UserService {
-    private otp: any;
-
+  
+        private otp: any;
     async signup(userData: any) {
         const existingUser = await UserRepository.findUserByEmail(userData.email);
         if(existingUser){
@@ -31,7 +33,6 @@ export class UserService {
         }
      
         
-        
         const user = await UserRepository.createUser(data);
 
          this.otp = Math.floor(100000 + Math.random() * 900000);
@@ -44,126 +45,126 @@ export class UserService {
 
 
 
-    async signupOtp(userOtp:number | string, email:string){
+    async signupOtp(userOtp:number | string, email:string):Promise<FunctionReturnType>{
        console.log(userOtp);
        console.log(this.otp);
        if(userOtp == this.otp){
-        await UserRepository.verifyUser(email);
+       const response =  await UserRepository.verifyUser(email);
+       return response
        }else{
         throw new Error("Invalid otp");
 
        }
-       
-       
-        
-    }
-
-    async loginUserData(email: string, password: string): Promise<{ userInfo: { username: string; email: string }; token: string } |any| null> {
-        return UserRepository.validateLoginUser(email, password);
-    }
-
-    async googleAuthValidate (userEmail:string):Promise<{ user: { username: string; email: string }; token: string } | null>{
-       return UserRepository.googleAuthUser(userEmail)
-        
-
+         
     }
 
 
-    async getProData():Promise<any>{
-        try {
+
+
+    async loginUserData(email: string, password: string): Promise<FunctionReturnType> {
+        const response =  UserRepository.validateLoginUser(email, password);
+        return response
+    }
+
+
+
+
+    async googleAuthValidate (userEmail:string):Promise<FunctionReturnType>{
+       const response = UserRepository.googleAuthUser(userEmail)
+        return response
+
+    }
+
+
+
+
+
+    async getProData():Promise<FunctionReturnType>{
+    
 
             const proData = await UserRepository.getAllProData();
             return proData
-            
-            
-        } catch (error) {
-            console.log(error);
-            
-            
-        }
     }
 
 
-    async forgetPasswordEmail(email : string): Promise<{ success: boolean; message: string;otp?: number }>{
-        try {
+
+
+    async forgetPasswordEmail(email : string): Promise<FunctionReturnType>{
+        
             const response = await UserRepository.forgetPasswordEmail(email);
             return response
-            
-        } catch (error) {
-            console.log(error);
-            return { success: false, message: 'An error occurred while processing your request' };
-            
-            
-        }
         
     }
 
-    async forgetPasswordOtp (otpValue:string,email:string): Promise<{ success: boolean; message: string  }>{
-        try {
+
+
+    async forgetPasswordOtp (otpValue:string,email:string): Promise<FunctionReturnType>{
+        
             const response = await UserRepository.forgetPasswordOtp(otpValue,email)
             return response
-            
-        } catch (error) {
-            console.log(error);
-            return {success:false,message:"error !!!"}
-            
-        }
+      
     }
 
-    async resetPassword(email:string, newPassword:string): Promise<{ success: boolean; message: string  }>{
-        try {
+
+
+    async resetPassword(email:string, newPassword:string): Promise<FunctionReturnType>{
+       
             const response = await UserRepository.resetPassword(email,newPassword)
-            return response
-            
-            
-            
-        } catch (error) {
-            console.log(error);
-            return {success:false,message:"error !!!"}
-            
-        }
+            return response   
+      
     }
 
 
-    async getAvailableSlots(id:string):Promise<{success:boolean,data?:any}>{
-        try {
+
+    async getAvailableSlots(id:string):Promise<FunctionReturnType>{
+      
             const response = await UserRepository.getAvailableSlots(id)
             return response
-        } catch (error) {
-            return {success:false}
-        }
+        
     }
 
 
 
-    async bookSlot(data:{userid:string,amount:string,selectedDate:string,selectedTimeSlot:string,proId:string}):Promise<{success:boolean,message:string}>{
-        try {
+    async bookSlot(data:{userid:string,amount:string,selectedDate:string,selectedTimeSlot:string,proId:string}):Promise<FunctionReturnType>{
             const response = await UserRepository.bookSlot(data);
             return response
-        } catch (error) {
-            console.log(error);
-            return {success:false , message:"slot book page error !!!"}
-        }
     }
 
-    async userBookings(userId:string):Promise<any>{
-        try {
+
+
+    async userBookings(userId:string):Promise<FunctionReturnType>{
+        
             const response = await UserRepository.userBookings(userId)
             return response
-        } catch (error) {
-            
-        }
     }
 
 
-    async userTransactions(userId:string):Promise<any>{
-        try {
+
+    async userTransactions(userId:string):Promise<FunctionReturnType>{
+      
             const response = await UserRepository.userTransactions(userId)
             return response
-        } catch (error) {
-            
-        }
+        
     }
+
+
+    async verifyToken(refreshToken:string):Promise<FunctionReturnType>{
+        
+        
+        const response = await UserRepository.verifyToken(refreshToken)
+        return response
+    }
+
+
+    async userSubscription(id:string,subscription: {endpoint: string;keys: {p256dh: string;auth: string;}}):Promise<FunctionReturnType>{
+
+        const response = await UserRepository.userSubscription(id,subscription)
+        return response
+    }
+
+
+
+   
 
 
 }

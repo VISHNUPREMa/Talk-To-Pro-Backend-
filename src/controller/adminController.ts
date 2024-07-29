@@ -65,6 +65,28 @@ import { AdminService } from "../services/adminService";
     
     }
 
+
+    async getAllbooking(req: Request, res: Response):Promise<any>{
+        try {
+            const response = await this.adminService.getAllbooking()
+            res.json(response)
+        } catch (error) {
+            console.log(error);
+            
+        }
+    }
+    
+    async getAlltransaction(req: Request, res: Response):Promise<any>{
+        try {
+            const response = await this.adminService.getAlltransaction()
+            
+            res.json(response)
+        } catch (error) {
+            console.log(error);
+            
+        }
+    }
+
 }
 
 export const adminController = new AdminController(new AdminService)
