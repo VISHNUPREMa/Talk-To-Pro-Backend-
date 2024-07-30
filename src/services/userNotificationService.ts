@@ -7,4 +7,10 @@ export class UserNotificationService{
         const response = await UserNotificationRepo.userNotification(id)
         return response
     }
+
+
+    async callUser(id:string):Promise<any>{
+        const response = await UserNotificationRepo.callUser(id);
+        return response;
+    }
 }

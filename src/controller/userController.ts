@@ -233,6 +233,18 @@ try {
     }
   }
 
+  async callUser(req: Request, res: Response){
+    try {
+  
+      const { id } = req.body;
+      const response = await this.userNotificationService.callUser(id);
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
 
 
 

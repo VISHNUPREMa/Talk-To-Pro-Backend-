@@ -93,4 +93,59 @@ export class UserNotificationRepo{
        } 
         
     }
+
+
+    static async callUser(id:string):Promise<any>{
+      try {
+        const now = new Date();
+   
+        const currentFormattedTime = new Intl.DateTimeFormat('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        }).format(now);
+        const currentDate = now.toISOString().split('T')[0]; 
+        
+        console.log(`Current time: ${currentFormattedTime}`);
+        console.log(`Current date: ${currentDate}`);
+
+
+        const bookingData = await BookingModel.aggregate([
+          { $unwind: "$slots" },
+          {
+            $match: {
+              $or: [
+                { providedBy: id },
+                { "slots.bookedBy": id }
+              ],
+            }
+          },
+          {
+            $match: {
+              $and: [
+                { date: { $regex: '2024-07-30' } },
+                { "slots.time": { $regex: '11:00 AM' } }
+              ]
+            }
+          }
+        ]);
+        
+        console.log("bookingData:", bookingData[0].providedBy);
+        console.log("booking other data : ",bookingData[0].slots.bookedBy);
+       const sentData =  id === bookingData[0].providedBy? bookingData[0].slots.bookedBy : bookingData[0].providedBy;
+       console.log(sentData);
+       
+        if(sentData){
+          return {success : true,data:sentData}
+        }else{
+          return {success : true,message:'no booking data'}
+        }
+        
+        
+      } catch (error) {
+        console.log(error);
+        return {success : false,data:error}
+        
+      }
+    }
 }
