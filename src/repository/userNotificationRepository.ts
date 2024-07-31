@@ -20,7 +20,7 @@ export class UserNotificationRepo{
             },
           },
           {
-            $unwind: '$slots',
+            $unwind: '$slots', // Unwind the slots array
           },
           {
             $lookup: {
@@ -47,7 +47,6 @@ export class UserNotificationRepo{
           {
             $project: {
               _id: 0,
-        
               date: 1,
               'slots.time': 1,
               'slots.status': 1,
@@ -59,10 +58,10 @@ export class UserNotificationRepo{
               updatedAt: 1,
             },
           },
+          // Group by date, createdAt, and updatedAt
           {
             $group: {
               _id: {
-             
                 date: '$date',
                 createdAt: '$createdAt',
                 updatedAt: '$updatedAt',
@@ -78,11 +77,23 @@ export class UserNotificationRepo{
               providedBy: { $first: '$providedBy' },
             },
           },
+          {
+            $unwind: '$slots', // Unwind the slots array again to have separate documents for each slot
+          },
+          {
+            $project: {
+              _id: 0,
+              date: '$_id.date',
+              updatedAt: '$_id.updatedAt',
+              time: '$slots.time',
+              status: '$slots.status',
+              amount: '$slots.amount',
+              bookedBy: '$slots.bookedBy',
+              providedBy: 1,
+            },
+          },
         ]);
-        
-        const user = await UserModel.find({userId:id},{_id:0,username:1})
 
-       
           if(bookings){
             return {success:true,data:bookings,message:"ALL BOOKINGS"}
           }else{
@@ -103,11 +114,13 @@ export class UserNotificationRepo{
           hour: '2-digit',
           minute: '2-digit',
           hour12: true,
-        }).format(now);
+        }).format(now).slice(0,2);
         const currentDate = now.toISOString().split('T')[0]; 
         
         console.log(`Current time: ${currentFormattedTime}`);
         console.log(`Current date: ${currentDate}`);
+        console.log(typeof(currentFormattedTime));
+        
 
 
         const bookingData = await BookingModel.aggregate([
@@ -123,15 +136,16 @@ export class UserNotificationRepo{
           {
             $match: {
               $and: [
-                { date: { $regex: '2024-07-30' } },
-                { "slots.time": { $regex: '11:00 AM' } }
+                { date: { $regex: currentDate } },
+                { "slots.time": { $regex: '12' } }
               ]
             }
           }
         ]);
+    
         
-        console.log("bookingData:", bookingData[0].providedBy);
-        console.log("booking other data : ",bookingData[0].slots.bookedBy);
+        
+    
        const sentData =  id === bookingData[0].providedBy? bookingData[0].slots.bookedBy : bookingData[0].providedBy;
        console.log(sentData);
        

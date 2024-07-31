@@ -55,6 +55,28 @@ class ProController{
         }
     }
 
+    async isUserCalled(req:Request,res:Response){
+        try {
+            const {proId,userId} = req.body;
+           const response = await this.proService.isUserCalled(proId,userId)
+            res.json(response)
+        } catch (error) {
+           console.log(error);
+            
+        }
+    }
+
+
+    async followPro(req:Request,res:Response){
+        try {
+            const {proId,userId} = req.body;
+            const response = await this.proService.followPro(proId,userId)
+            res.json(response)
+        } catch (error) {
+            
+        }
+    }
+
 }
 
 

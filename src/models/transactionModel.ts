@@ -10,7 +10,8 @@ export interface ITransaction extends Document {
   time: string;
   date: string;
  
-  modeOfPay: 'CreditCard' | 'DebitCard' | 'PayPal' | 'BankTransfer'; // Example payment methods
+  modeOfPay: 'CreditCard' | 'DebitCard' | 'PayPal' | 'BankTransfer';
+  
 }
 
 
@@ -47,6 +48,7 @@ const transactionSchema = new Schema<ITransaction>({
     enum: ['CreditCard', 'DebitCard', 'PayPal', 'BankTransfer'],
     required: true,
   },
+
 }, {
   timestamps: true, // Automatically adds `createdAt` and `updatedAt` fields
 });

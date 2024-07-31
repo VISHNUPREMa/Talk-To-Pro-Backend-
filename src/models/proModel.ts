@@ -10,6 +10,7 @@ export interface Ipro extends Document {
     profilepic: string;
     description: string;
     isBlocked: boolean;
+    followedBy:string[]
 }
 
 
@@ -22,7 +23,8 @@ const ProfessionalSchema: Schema = new Schema<Ipro>({
     languages: { type: [String], required: true },
     profilepic: { type: String, required: true },
     description: { type: String, required: true },
-    isBlocked: { type: Boolean, required: true }
+    isBlocked: { type: Boolean, required: true },
+    followedBy: { type: [String], default: [] },
 });
 
 const ProModel =  mongoose.model<Ipro>('Professional', ProfessionalSchema);

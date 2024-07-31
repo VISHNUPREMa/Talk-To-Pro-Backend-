@@ -24,4 +24,17 @@ export class ProService{
     }
 
 
+    async isUserCalled(proId:string,userId:string):Promise<FunctionReturnType>{
+
+        const response = await ProRepository.isUserCalled(proId,userId);
+        return response
+    }
+
+
+    async followPro(proId:string,userId:string):Promise<any>{
+        const response = await ProRepository.followPro(proId,userId);
+        return response
+    }
+
+
 }

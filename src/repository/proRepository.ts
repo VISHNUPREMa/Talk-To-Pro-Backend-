@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { decode } from 'punycode';
 import { FunctionReturnType } from '../helper/reusable';
+import { log } from 'console';
 
 interface Slot {
   time: string;
@@ -160,7 +161,76 @@ export class ProRepository {
   }
   
 
+
+  static async isUserCalled(userId:string,proId:string):Promise<FunctionReturnType>{
+    try {
+      const calledData = await BookingModel.aggregate([
+        { $match: { providedBy: userId } },
+        { $unwind: '$slots' },
+        { $match: { 
+            $and: [
+              { 'slots.bookedBy': proId },
+              { 'slots.status': 'Booked' }
+            ]
+          }
+        }
+      ]);
+      
+
+    
+       
+      
+      
+      
+
+      if(calledData.length > 0){
+        const alreadyFollower = await ProModel.findOne({
+          userid: userId,
+          followedBy: { $elemMatch: { $eq: proId } }
+        });
+        if(alreadyFollower){
+          return {success:true,data:true,message:'user already attend the videocall session !!!'}
+        }else{
+          return {success:true,message:'user already attend the videocall session !!!'}
+        }
+        
+      }else{
+        return {success:false,message:'user didnot attend the session attend the videocall session !!!'}
+      }
+      
+      
+    } catch (error) {
+      console.log(error);
+      return {success:false,data:error}
+      
+    }
+  }
+
  
+  static async followPro(userId:string,proId:string):Promise<FunctionReturnType>{
+    try {
+     const proData = await ProModel.findOne({userid:userId});
+     if(proData){
+     
+      if(!proData.followedBy.includes(proId)){
+        proData.followedBy.push(proId);
+        await proData.save();
+        return {success:true,message:'follow successfully'}
+      }else{
+        return {success:false,message:'Already Followed'}
+      }
+     }else{
+      return {success:false , message:'Invalid '}
+     }
+     
+      
+      
+    } catch (error) {
+      console.log(error);
+      return {success:false,data:error}
+      
+    }
+  }
 
 
 }

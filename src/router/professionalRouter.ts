@@ -21,6 +21,8 @@ const storage = multer.diskStorage({
      
 router.post("/professional/register", upload.single('profilePic'),proController.proRegister.bind(proController));
 router.post('/saveAvailableSlots',proController.saveAvailableSlots.bind(proController));
-router.post('/bookedslot',proController.getAllocatedSlot.bind(proController))
+router.post('/bookedslot',proController.getAllocatedSlot.bind(proController));
+router.post('/iscalled',proController.isUserCalled.bind(proController));
+router.patch('/follow',proController.followPro.bind(proController))
 
 export default router;

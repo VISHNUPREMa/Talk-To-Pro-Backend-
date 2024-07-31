@@ -23,6 +23,7 @@ router.post('/verifytoken',userController.verifyToken.bind(userController));
 router.post('/subscription',userController.userSubscription.bind(userController));
 router.post('/notification',userController.userNotification.bind(userController));
 router.post('/call',userController.callUser.bind(userController));
+
                                  
 
 
