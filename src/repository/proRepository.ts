@@ -131,7 +131,6 @@ export class ProRepository {
   }
   
   
-  
 
 
   static async getAllocatedSlot(proId: string): Promise<FunctionReturnType> {
@@ -165,11 +164,11 @@ export class ProRepository {
   static async isUserCalled(userId:string,proId:string):Promise<FunctionReturnType>{
     try {
       const calledData = await BookingModel.aggregate([
-        { $match: { providedBy: userId } },
+        { $match: { providedBy: proId } },
         { $unwind: '$slots' },
         { $match: { 
             $and: [
-              { 'slots.bookedBy': proId },
+              { 'slots.bookedBy': userId },
               { 'slots.status': 'Booked' }
             ]
           }
@@ -209,11 +208,11 @@ export class ProRepository {
  
   static async followPro(userId:string,proId:string):Promise<FunctionReturnType>{
     try {
-     const proData = await ProModel.findOne({userid:userId});
+     const proData = await ProModel.findOne({userid:proId});
      if(proData){
      
-      if(!proData.followedBy.includes(proId)){
-        proData.followedBy.push(proId);
+      if(!proData.followedBy.includes(userId)){
+        proData.followedBy.push(userId);
         await proData.save();
         return {success:true,message:'follow successfully'}
       }else{
@@ -223,6 +222,28 @@ export class ProRepository {
       return {success:false , message:'Invalid '}
      }
      
+      
+      
+    } catch (error) {
+      console.log(error);
+      return {success:false,data:error}
+      
+    }
+  }
+
+
+  static async unFollowPro(userId:string,proId:string):Promise<FunctionReturnType>{
+    try {
+      const result = await ProModel.updateOne(
+        { userid: proId },
+        { $pull: { followedBy: userId } }
+      );
+
+      if(result){
+        return {success:true,message:'unfollow successfully !!!'}
+      }else{
+        return {success:false,message:'user is not followed'}
+      }
       
       
     } catch (error) {

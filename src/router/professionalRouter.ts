@@ -23,6 +23,7 @@ router.post("/professional/register", upload.single('profilePic'),proController.
 router.post('/saveAvailableSlots',proController.saveAvailableSlots.bind(proController));
 router.post('/bookedslot',proController.getAllocatedSlot.bind(proController));
 router.post('/iscalled',proController.isUserCalled.bind(proController));
-router.patch('/follow',proController.followPro.bind(proController))
+router.patch('/follow',proController.followPro.bind(proController));
+router.patch('/unfollow',proController.unFollowPro.bind(proController))
 
 export default router;

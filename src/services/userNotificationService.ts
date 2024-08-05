@@ -1,5 +1,6 @@
 import { UserNotificationRepo } from "../repository/userNotificationRepository";
 import { FunctionReturnType } from "../helper/reusable";
+import { ISubscription } from "../models/subscriptionModel";
 
 export class UserNotificationService{
 
@@ -12,5 +13,12 @@ export class UserNotificationService{
     async callUser(id:string):Promise<any>{
         const response = await UserNotificationRepo.callUser(id);
         return response;
+    }
+
+
+    async pushNotification(subscription:ISubscription,id:string):Promise<any>{
+
+        const response = await UserNotificationRepo.pushNotification(subscription,id);
+        return response
     }
 }

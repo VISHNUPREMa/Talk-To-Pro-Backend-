@@ -8,8 +8,10 @@ import BookingModel from '../models/bookingModel';
 import TransactionModel from '../models/transactionModel';
 import { v4 as uuidv4 } from 'uuid';
 import { FunctionReturnType } from '../helper/reusable';
+import SubscriptionModel from '../models/subscriptionModel';
 import * as cron from 'node-cron';
-import webPush from '../helper/web-push'
+
+
 
 
 
@@ -265,7 +267,7 @@ static async bookSlot(data:{userid:string,amount:string,selectedDate:string,sele
       date: { $regex: `^${formattedDate}` },
     });
 
-    console.log("booking data:", bookingData);
+    
 
    
     if (bookingData) {
@@ -297,12 +299,29 @@ static async bookSlot(data:{userid:string,amount:string,selectedDate:string,sele
           amount:amount
 
         });
-        console.log("transactionData : ",transactionData);
+      
         
         
         console.log(`Slot at ${selectedTimeSlot} successfully booked.`);
-        // scheduleReminder(userid, formattedDate, selectedTimeSlot);
-        return {success : true , message:`Slot at ${selectedTimeSlot} successfully booked.` }
+      
+
+
+        const subscription = await SubscriptionModel.findOne({userId:userid},{_id:0});
+   
+        const datas ={
+          subscription:subscription,
+          from:subscription,
+          to:proId,
+          at:selectedTimeSlot,
+          date:formattedDate
+
+        }
+       
+       
+    
+  
+    
+        return {success : true ,data:datas,  message:`Slot at ${selectedTimeSlot} successfully booked.` }
       } else {
         console.log(`No slot found with the time ${selectedTimeSlot}.`);
         return {success : false , message:`No slot found with the time ${selectedTimeSlot}.` }
@@ -440,32 +459,6 @@ static async verifyToken(refreshToken:string):Promise<FunctionReturnType>{
 
 
 
-static async userSubscription(id:string,subscription: {endpoint: string;keys: {p256dh: string;auth: string;}}):Promise<FunctionReturnType>{
-  try {
-    const user = await UserModel.findOne({userId:id});
-   if(user){
-    user.subscriptions = user.subscriptions || [];
-
-    const subscriptionExists = user.subscriptions.some(
-      (sub) =>
-        sub.endpoint === subscription.endpoint &&
-        sub.keys.p256dh === subscription.keys.p256dh &&
-        sub.keys.auth === subscription.keys.auth
-    );
-
-    if (!subscriptionExists) {
-      user.subscriptions.push(subscription);
-      await user.save();
-      return { success: true, message: 'Subscription saved successfully' };
-    } else {
-      return{ success: true, message: 'Subscription already exists' };
-    }
-   }else
-   return {success : false,message:'no user found'}
-  } catch (error) {
-    return {success : false,data:error}
-  }
-}
 
 }
 
@@ -475,29 +468,3 @@ static async userSubscription(id:string,subscription: {endpoint: string;keys: {p
 
 
 
-
-// const scheduleReminder = (userid: string, date: string, time: string): void => {
-//   const reminderTime = new Date(date + ' ' + time);
-//   console.log("reminder : ",reminderTime);
-  
-//   reminderTime.setMinutes(reminderTime.getMinutes() - 5);
-
-//   const reminderCron = `${reminderTime.getMinutes()} ${reminderTime.getHours()} ${reminderTime.getDate()} ${reminderTime.getMonth() + 1} *`;
-//    console.log("reminderCron : ",reminderCron);
-   
-//   cron.schedule(reminderCron, async () => {
-//     const user = await UserModel.findOne({ userId: userid }, { subscriptions: 1, email: 1 });
-//     console.log("user : ",user);
-    
-//     if (user && user.subscriptions) {
-//       user.subscriptions.forEach((subscription: any) => {
-//         const payload = JSON.stringify({
-//           title: 'Slot Booking Reminder',
-//           message: `Your slot booking is scheduled at ${time} on ${date}`,
-//           url: 'http://localhost:5173/'
-//         });
-//         webPush.sendNotification(subscription, payload);
-//       });
-//     }
-//   });
-// };

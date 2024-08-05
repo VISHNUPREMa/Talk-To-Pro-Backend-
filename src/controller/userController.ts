@@ -208,18 +208,7 @@ try {
 
 
 
-  async userSubscription(req:Request , res:Response){
-    try {
-      const {id,subscription} = req.body;
-     
-      const response = await this.userService.userSubscription(id,subscription)
-      res.json(response)
-      
-    } catch (error) {
-      console.log(error);
-      
-    }
-  }
+ 
 
 
   async userNotification(req: Request, res: Response) {
@@ -238,6 +227,17 @@ try {
   
       const { id } = req.body;
       const response = await this.userNotificationService.callUser(id);
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+  async pushNotification(req: Request, res: Response){
+    try {
+      const {subscription , id} = req.body;
+      const response = await this.userNotificationService.pushNotification(subscription,id)
       res.json(response)
     } catch (error) {
       console.log(error);

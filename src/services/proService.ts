@@ -1,13 +1,21 @@
 import { ProRepository } from "../repository/proRepository";
 import { FunctionReturnType } from "../helper/reusable";
 
+interface ProfessionalData {
+    profession: string;
+    domains: string;
+    experience: string;
+    languages: string;
+    profilePic: File | null;
+    description: string;
+  }
+
 export class ProService{
     
 
-    async register(data:any ):Promise<FunctionReturnType>{
+    async register(data:ProfessionalData ):Promise<FunctionReturnType>{
   
         const proData = await ProRepository.registerPro(data);
-        console.log("pro data in register in pro service : ",proData);
             return proData    
     }
 
@@ -33,6 +41,11 @@ export class ProService{
 
     async followPro(proId:string,userId:string):Promise<any>{
         const response = await ProRepository.followPro(proId,userId);
+        return response
+    }
+
+    async unFollowPro(proId:string,userId:string):Promise<any>{
+        const response = await ProRepository.unFollowPro(proId,userId);
         return response
     }
 

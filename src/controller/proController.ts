@@ -77,6 +77,16 @@ class ProController{
         }
     }
 
+    async unFollowPro(req:Request,res:Response){
+        try {
+            const {proId,userId} = req.body;
+            const response = await this.proService.unFollowPro(proId,userId)
+            res.json(response)
+        } catch (error) {
+            
+        }
+    }
+
 }
 
 

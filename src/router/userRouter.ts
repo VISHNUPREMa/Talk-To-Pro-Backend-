@@ -20,9 +20,9 @@ router.post('/bookslot',userController.bookSlot.bind(userController));
 router.post('/userbooking',userController.userBookings.bind(userController));
 router.post('/transaction',userController.userTransactions.bind(userController));
 router.post('/verifytoken',userController.verifyToken.bind(userController));
-router.post('/subscription',userController.userSubscription.bind(userController));
 router.post('/notification',userController.userNotification.bind(userController));
 router.post('/call',userController.callUser.bind(userController));
+router.post('/storePushNotification',userController.pushNotification.bind(userController))
 
                                  
 
