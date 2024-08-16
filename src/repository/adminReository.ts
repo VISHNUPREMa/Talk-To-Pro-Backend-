@@ -12,16 +12,27 @@ export class AdminRepository {
         const { email, password } = data;
         
         try {
-            const user = await UserModel.findOne({ email:email },{_id:0});
-            
+            const user = await UserModel.findOne({ email:email },{_id:0,__v:0});
+            let role = ""
             if (user && user.isAdmin) {
+                role = "admin"
                 console.log("user  : ",user);
                 
                 const isValidPassword = await bcrypt.compare(password, user.password);
                 
                 if (isValidPassword) {
-                    const token = jwt.sign({ id: user.userId, email: user.email }, process.env.JWT_SECRET_KEY!, { expiresIn: '1h' });
-                    return { success: true,token, message: 'Login successful' };
+                    const accessToken = jwt.sign(
+                        { id: user.userId, email: user.email ,role:role},
+                        process.env.JWT_SECRET_KEY!,
+                        { expiresIn: '1h' }
+                      );
+                      const refreshToken = jwt.sign(
+                        { id: user.userId, email: user.email ,role:role },
+                        process.env.JWT_REFRESH_SECRET_KEY!,
+                        { expiresIn: '7d' }
+                      )
+                    
+                    return { success: true,data:{accessToken,refreshToken}, message: 'Login successful' };
                 } else {
                     return { success: false, message: 'Invalid Password' };
                 }
@@ -130,9 +141,8 @@ try {
             isBlocked:pro.isBlocked
 
         };
-    }));
+    })); 
 
-    console.log("Professionals with usernames:", professionalsWithUsernames);
     return {success:true , data:professionalsWithUsernames}
     
    } catch (error) {
@@ -330,6 +340,150 @@ return {success:true,data:allBookings}
         } catch (error) {
             console.log(error);
             return {success:true,data:error}
+        }
+      }
+
+
+      static async verifyToken(user:string):Promise<FunctionReturnType>{
+        try {
+            const Admindata = await UserModel.findOne({userId:user},{_id:0,userId:1,email:1,isAdmin:1});
+            if(Admindata && Admindata.isAdmin){
+                const role = "admin"
+                const accessToken = jwt.sign(
+                    { id: Admindata.userId, email: Admindata.email ,role:role},
+                    process.env.JWT_SECRET_KEY!,
+                    { expiresIn: '1h' }
+                  );
+
+                  return {success:true,data:accessToken}
+            }else{
+                return {success:false,message:'Invalid admin credentials !!!'}
+            }
+        } catch (error) {
+           console.log("error in verifytoken in repo : ",error);
+           return {success:false , data:error}
+            
+        }
+      }
+
+
+      static async getAllProRequests():Promise<FunctionReturnType>{
+      try {
+        const allpro = await ProModel.find({isAdminVerified:false},{_id:0,__v:0});
+        const professionalsWithUsernames = await Promise.all(allpro.map(async (pro) => {
+            const user = await UserModel.findOne({ userId: pro.userid }, { _id: 0, username: 1,email:1 });
+            return {
+               userid:pro.userid,
+                username: user ? user.username : null,
+                email: user ? user.email : pro.email,
+                profession: pro.profession,
+                profilePic: pro.profilepic,
+                domain:pro.domain,
+                experience:pro.experience,
+                languages:pro.languages,
+                description:pro.description
+
+    
+            };
+        }));
+
+        return {success:true , data:professionalsWithUsernames}
+        
+      } catch (error) {
+        return {success:false,data:error}
+      }
+      }
+
+      static async verifyProRequest(id:string):Promise<any>{
+        try {
+           const proData = await ProModel.findOne({userid:id});
+           if(proData){
+            proData.isAdminVerified = true;
+            proData.save();
+            return {success:true,message:'professional verified succcessfully !!'}
+
+           }else{
+            return {success:false,message:'professional not found'}
+           }
+            
+        } catch (error) {
+            console.log(error);
+            return {success:false,data:error}
+            
+        }
+      }
+
+
+      static async getPIeChartData():Promise<FunctionReturnType>{
+        try {
+            const data = await ProModel.aggregate([
+                { $match: {} }, // This matches all documents (optional if no filtering is needed)
+                {
+                  $group: {
+                    _id: '$profession', // Group by the 'profession' field
+                    count: { $sum: 1 } // Count the number of occurrences in each group
+                  }
+                }
+              ]);
+             
+              if(data){
+                return {success:true , data:data}
+              }else{
+                return {success:false,message:'no data found'}
+              }
+              
+        } catch (error) {
+           console.log(error);
+           return {success:false , data:error,message:'error occur while fetch data to pie chart'}
+        }
+      }
+
+
+      static async getBarChartData():Promise<FunctionReturnType>{
+        try {
+          const data = await TransactionModel.aggregate([
+            {
+              $lookup: {
+                from: 'professionals',
+                localField: 'to',
+                foreignField: 'userid',
+                as: 'prodetails'
+              }
+            },
+            { $unwind: '$prodetails' }, // Unwind the 'prodetails' array
+            {
+              $group: {
+                _id: { date: '$date', profession: '$prodetails.profession' }, // Group by date and profession
+                count: { $sum: 1 }, // Count the number of transactions for each profession on each date
+                totalAmount: { $sum: '$amount' } // (Optional) Sum the amount for each profession on each date
+              }
+            },
+            {
+              $project: {
+                _id: 0, // Hide the default _id field
+                date: '$_id.date',
+                profession: '$_id.profession',
+                count: 1,
+                
+              }
+            },
+            {
+              $sort: { date: -1 } // (Optional) Sort by date and profession
+            }
+          ]);
+          
+            console.log("data : ",data);
+            
+              if(data){
+                return {success:true,data:data}
+              }else{
+                return {success:false,message:'No Data to show in Bar chart'}
+              }
+                       
+        } catch (error) {
+          console.log(error);
+          return {success:false,data:error}
+            
         }
       }
 }   

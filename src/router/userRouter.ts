@@ -22,9 +22,14 @@ router.post('/transaction',userController.userTransactions.bind(userController))
 router.post('/verifytoken',userController.verifyToken.bind(userController));
 router.post('/notification',userController.userNotification.bind(userController));
 router.post('/call',userController.callUser.bind(userController));
-router.post('/storePushNotification',userController.pushNotification.bind(userController))
-
-                                 
+router.post('/storePushNotification',userController.pushNotification.bind(userController));
+router.post('/accountdetails',userController.accountDetails.bind(userController));
+router.patch('/edituserdetails',userController.editUserInfo.bind(userController))          
+router.patch('/editpassword',userController.editUserPassword.bind(userController));
+router.post('/fetchreview',userController.fetchReview.bind(userController));
+router.post('/addreview',userController.addReview.bind(userController));
+router.post('/fetchratings',userController.fetchRating.bind(userController))
+                                    
 
 
 export default router

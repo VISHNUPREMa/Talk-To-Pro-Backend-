@@ -87,6 +87,35 @@ import { AdminService } from "../services/adminService";
         }
     }
 
+
+    async verifyToken(req: Request, res: Response):Promise<any>{
+     const {refreshToken} = req.body;
+     const response = await this.adminService.verifyToken(refreshToken)        
+     res.json(response)
+    }
+    
+    async getAllProRequests(req: Request, res: Response):Promise<any>{
+
+        const response = await this.adminService.getAllProRequests();
+        res.status(200).json(response)
+    }
+
+    async verifyProRequest(req: Request, res: Response):Promise<any>{
+        const {id} = req.body;
+        const response = await this.adminService.verifyProRequest(id)
+        res.json(response)
+    }
+
+    async getPIeChartData(req: Request, res: Response):Promise<any>{
+        const response = await this.adminService.getPIeChartData()
+        res.json(response)
+    }
+
+
+    async getBarChartData(req: Request, res: Response):Promise<any>{
+        const response = await this.adminService.getBarChartData();
+        res.json(response)
+    }
 }
 
 export const adminController = new AdminController(new AdminService)

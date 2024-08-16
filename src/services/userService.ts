@@ -170,13 +170,18 @@ export class UserService {
     
                 // Generate a cron expression
                 const cronExpression = `${minute} ${hour} ${day} ${month} *`;
-    
+                 console.log("cron shedule : ",cronExpression);
+                 
                 // Schedule the task
-                cron.schedule(cronExpression, () => {
-                    webpush.sendNotification(subscription, payload)
+                console.log("subscription : ",subscription);
+                
+                cron.schedule('*/5 * * * *', () => {
+                    console.log("Immediate task executed");
+                    webpush.sendNotification(subscription.subscriptions, payload)
                         .then(() => console.log('Notification sent successfully'))
                         .catch(error => console.error('Error sending notification:', error));
                 });
+                
     
                 console.log(`Scheduled notification for: ${scheduledDateTime}`);
             } else {

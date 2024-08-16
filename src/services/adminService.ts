@@ -1,5 +1,6 @@
 import { AdminRepository } from "../repository/adminReository";
 import { FunctionReturnType } from "../helper/reusable";
+import jwt ,{ JwtPayload } from 'jsonwebtoken';
 
 
 export class  AdminService{
@@ -74,6 +75,38 @@ async getAlltransaction():Promise<FunctionReturnType>{
         const response = await AdminRepository.getAlltransaction();
         return response
   
+}
+
+
+
+async verifyToken(refreshToken:string):Promise<FunctionReturnType>{
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET_KEY!)as JwtPayload;
+    const user = decoded.userId
+        const response = await AdminRepository.verifyToken(user);
+        return response
+}
+
+async getAllProRequests():Promise<any>{
+        const response = await AdminRepository.getAllProRequests();
+        return response   
+}
+
+
+async verifyProRequest(id:string):Promise<FunctionReturnType>{
+        const response = await AdminRepository.verifyProRequest(id);
+        return response
+}
+
+
+async getPIeChartData():Promise<any>{
+        const response = await AdminRepository.getPIeChartData();
+        return response
+}
+
+
+async getBarChartData():Promise<any>{
+        const response = await AdminRepository.getBarChartData();
+        return response
 }
 
 }

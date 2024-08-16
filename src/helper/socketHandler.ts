@@ -36,6 +36,13 @@ const handleSocketConnection = (io: Server) => {
       socket.to(room).emit('chat-message', { message, fromId: sender });
     });
 
+    socket.on('review',(data)=>{
+      const {room,customerId} = data
+      console.log("review message from ");
+      io.to(connectedClients[customerId]).emit('review')
+      
+    })
+
     socket.on('disconnect', () => {
       // Remove disconnected client
       for (const clientId in connectedClients) {

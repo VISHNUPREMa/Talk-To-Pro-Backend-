@@ -56,8 +56,12 @@ export class UserRepository {
 
   static async validateLoginUser(email:string,password:string):Promise<FunctionReturnType>{
    try {
-    const user = await UserModel.findOne({ email },{_id:0,userId:1,username:1,email:1,password:1,isBlocked:1,isServiceProvider:1});
-
+    console.log([email ,password ]);
+    
+    const user = await UserModel.findOne({email:email},{_id:0})
+    let role = "";
+    console.log("user in validation : ",user);
+    
 
     
     if (!user) {
@@ -73,9 +77,17 @@ export class UserRepository {
     if(user.isBlocked){
       return  { success:false,message: 'user blocked' };
     }
+
+    if(user.isAdmin){
+      role = "admin"
+    }else{
+      role = "user"
+    }
+
+
     
     const accessToken = jwt.sign(
-      { id: user.userId, email: user.email },
+      { id: user.userId, email: user.email ,role:role},
       process.env.JWT_SECRET_KEY!,
       { expiresIn: '1h' }
     );
@@ -96,6 +108,7 @@ export class UserRepository {
   };
   
        
+       console.log("user infor : ",userInfo);
        
     return {success:true,data:{ userInfo, accessToken , refreshToken  }};
           
@@ -151,8 +164,10 @@ export class UserRepository {
 
   static async  getAllProData():Promise<FunctionReturnType>{
     try {
-      const allProData = await ProModel.find({ isBlocked: false });
-
+      const allProData = await ProModel.find({
+        isBlocked: false,
+        $or: [{ isAdminVerified: true }, { isAdminVerified: { $exists: false } }]
+      });
       return {success:true,data:allProData}
       
       

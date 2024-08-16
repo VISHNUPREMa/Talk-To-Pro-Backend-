@@ -26,6 +26,11 @@ interface SaveSlotsResult {
   data?: Slot[];
 }
 
+interface IUpdateData{
+  newProfilePic? : string, 
+  linkedinUrl? :string
+}
+
 
 export class ProRepository {
 
@@ -50,7 +55,8 @@ export class ProRepository {
           languages: languages.split(",").map((language: string) => language.trim()), 
           description: description,
           profilepic: profilePic,
-          isBlocked: false
+          isBlocked: false,
+          isAdminVerified:false
         };
 
         const newPro = new ProModel(proData);
@@ -252,6 +258,112 @@ export class ProRepository {
       
     }
   }
+
+
+  static async addRating(stars: number, toId: string, bookingId: string, bookTime: string): Promise<FunctionReturnType> {
+    try {
+    
+      const proData = await ProModel.updateOne(
+        { userid: toId },
+        { $push: { reviews: stars } }
+      );
+  
+      console.log([bookingId, bookTime]);
+  
+      if (proData.modifiedCount > 0) {
+    
+     const bookingData = await BookingModel.findOneAndUpdate(
+      { bookingId: bookingId, 'slots.time': { $regex: bookTime } },
+      { $set: { 'slots.$.status': 'Done' } },
+      { new: true }
+    );
+     
+      
+        if (bookingData) {
+       
+          return { success: true, message: 'Rating added successfully, and booking status updated to Done!' };
+        } else {
+          console.log("no");
+          return { success: false, message: 'Booking not found or no change made.' };
+        }
+      } else {
+        return { success: false, message: 'No change in professional data.' };
+      }
+    } catch (error) {
+      console.log(error);
+      return { success: false, data: error };
+    }
+  }
+
+
+  static async editProDetails(userid:string,changedDetails:any):Promise<FunctionReturnType>{
+    try {
+      const proData = await ProModel.findOne({userid:userid});
+      if(proData){
+        
+        changedDetails.forEach((ele: { [key: string]: any }) => {
+          
+          const eleKeys = Object.keys(ele);
+          const proDataKeys = Object.keys(proData.toObject()); 
+          
+      
+          const isMatching = eleKeys.every(key => proDataKeys.includes(key));
+          
+          if (isMatching) {
+              console.log("Matching keys:", eleKeys);
+              // Apply changes
+              Object.assign(proData, ele);
+          }
+      });
+
+      console.log("pro data : ",proData);
+      
+
+       await proData.save();
+        
+        
+        return {success:true,message:'professional details changed successfully !!!'}
+      }else{
+        return {success:false,message:'professional details not found'}
+      }
+    } catch (error) {
+      console.log(error);
+      return {success:false,data:error,message:'error occur on pro editing'}
+    }
+  }
+
+
+
+  static async editProfilePic(updateData:IUpdateData,userid:string):Promise<FunctionReturnType>{
+    try {
+      const proData = await ProModel.findOne({userid:userid});
+      console.log("pro data : ",proData);
+      console.log("user id : ",userid);
+      console.log("newProfilePic : ",updateData);
+      
+      const {newProfilePic , linkedinUrl} = updateData
+      
+      if(proData){
+        if(newProfilePic){
+          proData.profilepic = newProfilePic;
+        }
+
+        if(linkedinUrl){
+          proData.linkedinUrl = linkedinUrl
+        }
+        await proData.save()
+        return {success:true, message:'Changes update successfully !!!'}
+      }else{
+        return {success:false, message:'profile not found !!!'}
+      }
+    
+    } catch (error) {
+      
+      return {success:false,data:error,message:'error occur while change profile pic !!!'}
+      
+    }
+  }
+  
 
 
 }

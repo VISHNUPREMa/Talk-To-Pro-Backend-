@@ -245,6 +245,80 @@ try {
     }
   }
 
+  async accountDetails(req: Request, res: Response){
+    try {
+      const {userid} = req.body;
+      const response = await this.userNotificationService.accountDetails(userid)
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+
+  async editUserInfo(req: Request, res: Response){
+    try {
+      const {email,username ,userid} = req.body;
+      const response = await this.userNotificationService.editUserInfo(email,username,userid)
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+
+  async editUserPassword(req: Request, res: Response){
+    try {
+      const {confirmPassword,newPassword,oldPassword,userid} = req.body;
+     
+      
+      const response = await this.userNotificationService.editUserPassword(confirmPassword,newPassword,oldPassword,userid)
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+
+  async fetchReview(req: Request, res: Response){
+    try {
+      const {userId} = req.body;
+      const response = await this.userNotificationService.fetchReview(userId)
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+
+  async addReview(req: Request, res: Response){
+    try {
+      const {newReview,userId,id} = req.body;
+     const response = await this.userNotificationService.addReview(newReview,userId,id)
+     res.json(response)
+      
+    } catch (error) {
+    console.log(error);
+      
+    }
+  }
+
+
+  async fetchRating(req: Request, res: Response){
+    try {
+      const {userId} = req.body;
+      const response = await this.userNotificationService.fetchRating(userId);
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
 
 
 

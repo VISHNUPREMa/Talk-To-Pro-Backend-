@@ -1,5 +1,6 @@
-import { Request, Response } from "express";
+import { Request, response, Response } from "express";
 import { ProService } from "../services/proService";
+
 
 
 class ProController{
@@ -84,6 +85,61 @@ class ProController{
             res.json(response)
         } catch (error) {
             
+        }
+    }
+
+    async addRating(req:Request,res:Response){
+        try {
+            const {stars ,toId,bookingId,bookTime} = req.body;
+            
+            
+            
+            const response = await this.proService.addRating(stars,toId,bookingId,bookTime)
+            res.json(response)
+            
+        } catch (error) {
+            console.log(error);
+            
+        }
+    }
+
+    async editProDetails(req:Request,res:Response){
+        try {
+            const {changedDetails,userid} = req.body;
+    
+            const response = await this.proService.editProDetails(changedDetails,userid)
+            res.json(response)
+            
+        } catch (error) {
+           console.log(error);
+            
+        }                    
+    }    
+
+    async editProfilePic(req:Request,res:Response){
+        try {
+            const data = req.file;
+            const { userid, linkedinUrl } = req.body;
+          
+            const newProfilePic = data?.filename;
+            const updateData: any = {};
+            if (newProfilePic) {
+                updateData.profilePic = newProfilePic;
+            }
+
+            if (linkedinUrl) {
+                updateData.linkedinUrl = linkedinUrl;
+            }
+            const response = await this.proService.editProfilePic(updateData ,userid);
+            
+            
+
+            res.json(response)
+            
+            
+        } catch (error) {
+            console.log(error);
+                 
         }
     }
 

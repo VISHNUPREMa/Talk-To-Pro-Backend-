@@ -10,6 +10,12 @@ interface ProfessionalData {
     description: string;
   }
 
+  interface IUpdateData{
+    newProfilePic? : string, 
+    linkedinUrl? :string
+}
+
+
 export class ProService{
     
 
@@ -39,13 +45,30 @@ export class ProService{
     }
 
 
-    async followPro(proId:string,userId:string):Promise<any>{
+    async followPro(proId:string,userId:string):Promise<FunctionReturnType>{
         const response = await ProRepository.followPro(proId,userId);
         return response
     }
 
-    async unFollowPro(proId:string,userId:string):Promise<any>{
+    async unFollowPro(proId:string,userId:string):Promise<FunctionReturnType>{
         const response = await ProRepository.unFollowPro(proId,userId);
+        return response
+    }
+
+
+    async addRating(stars:number,toId:string,bookingId:string,bookTime:string):Promise<FunctionReturnType>{
+        const response = await ProRepository.addRating(stars,toId,bookingId,bookTime);
+        return response
+    }
+
+    async editProDetails(changedDetails:any,userid:string):Promise<FunctionReturnType>{
+        const response = await ProRepository.editProDetails(userid,changedDetails);
+       return response
+       
+    }
+
+    async editProfilePic(updateData:IUpdateData,userid:string):Promise<any>{
+        const response = await ProRepository.editProfilePic(updateData,userid);
         return response
     }
 
