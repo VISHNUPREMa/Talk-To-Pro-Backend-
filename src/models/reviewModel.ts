@@ -2,6 +2,10 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 // Define a nested schema for individual reviews
 const individualReviewSchema = new Schema({
+  reviewerId:{
+    type: String,
+    required: true,
+  },
   reviewerName: {
     type: String,
     required: true,
@@ -25,6 +29,7 @@ const individualReviewSchema = new Schema({
 export interface IReview extends Document {
   userId: string;
   reviews: {
+    reviewerId:string,
     reviewerName: string;
     date: string;
     title: string;

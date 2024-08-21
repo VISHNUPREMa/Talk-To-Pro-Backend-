@@ -110,7 +110,7 @@ export class UserRepository {
        
        console.log("user infor : ",userInfo);
        
-    return {success:true,data:{ userInfo, accessToken , refreshToken  }};
+    return {success:true,data:{ userInfo, accessToken , refreshToken  },message:'Login successful'};
           
     
    } catch (error) {

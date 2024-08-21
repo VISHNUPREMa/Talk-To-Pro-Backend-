@@ -28,7 +28,17 @@ router.patch('/edituserdetails',userController.editUserInfo.bind(userController)
 router.patch('/editpassword',userController.editUserPassword.bind(userController));
 router.post('/fetchreview',userController.fetchReview.bind(userController));
 router.post('/addreview',userController.addReview.bind(userController));
-router.post('/fetchratings',userController.fetchRating.bind(userController))
+router.post('/fetchratings',userController.fetchRating.bind(userController));
+router.put('/editreview',userController.editReview.bind(userController));
+router.post('/deletereview',userController.deleteReview.bind(userController));
+router.patch('/cancelbooking',userController.cancelBooking.bind(userController));
+router.post('/fetchwallet',userController.fetchWallet.bind(userController));
+router.post('/createOrder', userController.createOrder.bind(userController));
+router.post('/verifyPayment', userController.verifyPayment.bind(userController));
+router.post('/favorites',userController.allFavourites.bind(userController))
+
+
+
                                     
 
 

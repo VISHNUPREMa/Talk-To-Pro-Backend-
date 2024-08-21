@@ -9,6 +9,16 @@ interface IReview {
     date: string;
     text: string;
   }
+
+
+  interface IEditReview {
+    reviewerId: string;
+    reviewerName: string;
+    date: string;
+    title: string;
+    content: string;
+  }
+  
   
 
 export class UserNotificationService{
@@ -63,6 +73,31 @@ export class UserNotificationService{
 
     async fetchRating(userId:string):Promise<any>{
         const response = await UserNotificationRepo.fetchRating(userId);
+        return response
+    }
+
+    async editReview(editedReview:IEditReview,userId:string):Promise<FunctionReturnType>{
+        const response = await UserNotificationRepo.editReview(editedReview , userId); 
+        return response
+    }
+
+    async deleteReview(review:IEditReview,userId:string):Promise<FunctionReturnType>{
+        const response = await UserNotificationRepo.deleteReview(review , userId); 
+        return response
+    }
+
+    async cancelBooking(bookingId : string,cancelBy : string,time:string,date:string):Promise<any>{
+        const response = await UserNotificationRepo.cancelBooking(bookingId,cancelBy,time,date);
+        return response 
+    }
+
+    async fetchWallet(userId:string):Promise<FunctionReturnType>{
+        const response = await UserNotificationRepo.fetchWallet(userId);
+        return response
+    }
+
+    async updateWallet(amount:number,id:string):Promise<any>{
+        const response = await UserNotificationRepo.updateWallet(amount,id);
         return response
     }
 }

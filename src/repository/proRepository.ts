@@ -1,11 +1,12 @@
 import UserModel from '../models/userModel';
 import ProModel from '../models/proModel';
 import BookingModel from '../models/bookingModel';
+import WalletModel from '../models/walletModel';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { decode } from 'punycode';
 import { FunctionReturnType } from '../helper/reusable';
-import { log } from 'console';
+
 
 interface Slot {
   time: string;
@@ -27,7 +28,7 @@ interface SaveSlotsResult {
 }
 
 interface IUpdateData{
-  newProfilePic? : string, 
+  profilePic? : string, 
   linkedinUrl? :string
 }
 
@@ -167,54 +168,57 @@ export class ProRepository {
   
 
 
-  static async isUserCalled(userId:string,proId:string):Promise<FunctionReturnType>{
+  static async singlePro(userId:string):Promise<FunctionReturnType>{
     try {
-      const calledData = await BookingModel.aggregate([
-        { $match: { providedBy: proId } },
-        { $unwind: '$slots' },
-        { $match: { 
-            $and: [
-              { 'slots.bookedBy': userId },
-              { 'slots.status': 'Booked' }
-            ]
+      console.log("a");
+      const proData = await ProModel.aggregate([
+        { $match: { userid: userId } },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'userid',
+            foreignField: 'userId',
+            as: 'userdetails'
+          }
+        },
+        {
+          $unwind: '$userdetails'
+        },
+        {
+          $project:{
+            _id:0,
+            profession:1,
+            domain:1,
+            experience:1,
+            languages:1,
+            profilepic:1,
+            description:1,
+            isBlocked:1,
+            followedBy:1,
+            reviews:1,
+            linkedinUrl:1,
+            'userdetails.username':1
           }
         }
       ]);
       
-
+   
+      
     
-       
       
       
-      
-
-      if(calledData.length > 0){
-        const alreadyFollower = await ProModel.findOne({
-          userid: userId,
-          followedBy: { $elemMatch: { $eq: proId } }
-        });
-        if(alreadyFollower){
-          return {success:true,data:true,message:'user already attend the videocall session !!!'}
-        }else{
-          return {success:true,message:'user already attend the videocall session !!!'}
-        }
-        
-      }else{
-        return {success:false,message:'user didnot attend the session attend the videocall session !!!'}
-      }
-      
-      
+      return {success:true,data:proData}
     } catch (error) {
-      console.log(error);
-      return {success:false,data:error}
-      
+      return{success:false,message:'error while fetch professional data : '}
     }
   }
-
+                                 
  
   static async followPro(userId:string,proId:string):Promise<FunctionReturnType>{
     try {
      const proData = await ProModel.findOne({userid:proId});
+     console.log("pro data : ",proData);
+     
      if(proData){
      
       if(!proData.followedBy.includes(userId)){
@@ -334,36 +338,131 @@ export class ProRepository {
 
 
 
-  static async editProfilePic(updateData:IUpdateData,userid:string):Promise<FunctionReturnType>{
+  static async editProfilePic(updateData: IUpdateData, userid: string): Promise<FunctionReturnType> {
     try {
-      const proData = await ProModel.findOne({userid:userid});
-      console.log("pro data : ",proData);
-      console.log("user id : ",userid);
-      console.log("newProfilePic : ",updateData);
-      
-      const {newProfilePic , linkedinUrl} = updateData
-      
-      if(proData){
-        if(newProfilePic){
-          proData.profilepic = newProfilePic;
-        }
-
-        if(linkedinUrl){
-          proData.linkedinUrl = linkedinUrl
-        }
-        await proData.save()
-        return {success:true, message:'Changes update successfully !!!'}
-      }else{
-        return {success:false, message:'profile not found !!!'}
+      const proData = await ProModel.findOne({ userid });
+  
+      if (!proData) {
+        return { success: false, message: 'Profile not found !!!' };
       }
     
+      console.log("update : ",updateData);
+      
+
+   
+    
+      if (updateData?.profilePic) {
+        console.log("a b ",updateData.profilePic);
+        
+        proData.profilepic = updateData.profilePic;
+      }
+  
+      if (updateData?.linkedinUrl) {
+        proData.linkedinUrl = updateData.linkedinUrl;
+      }
+     console.log(proData);
+     
+      await proData.save();
+      return { success: true, message: 'Changes updated successfully !!!' };
     } catch (error) {
+      return { success: false, data: error as any, message: 'Error occurred while changing profile pic !!!' };
+    }
+  }
+ 
+
+  static async cancelBooking(slot: string, selectedDate: string, proId: string): Promise<FunctionReturnType> {
+    try {
+      const dateRegex = new RegExp(`^${selectedDate.slice(0, 10)}`);
+      let from = "";
+      let amount = "";
       
-      return {success:false,data:error,message:'error occur while change profile pic !!!'}
-      
+      const bookingData = await BookingModel.findOne({
+        providedBy: proId,
+        date: { $regex: dateRegex }
+      });
+                                             
+      if (bookingData) {
+        bookingData.slots = bookingData.slots.map((slotData: any) => {
+          if (slotData.time === slot) {
+            slotData.status = "Cancelled";
+            from = slotData.bookedBy;
+            amount = slotData.amount;
+          }
+          return slotData;
+        });
+  
+        console.log("proId:", proId);
+        console.log("from:", from);
+        
+        let proWalletData = await WalletModel.findOne({ walletBy: proId });
+        let userWalletData = await WalletModel.findOne({ walletBy: from });
+  
+        console.log("bookingData:", bookingData);
+        console.log("proWalletData:", proWalletData);
+  
+        if (proWalletData) {
+          if (proWalletData.totalAmount >= Number(amount)) {
+            proWalletData.totalAmount -= Number(amount);
+            proWalletData.walletDetails.push({
+              from: from,
+              amount: amount,
+              status: "Debited"
+            });
+          } else {
+            return { success: false, message: 'Insufficient funds in wallet to deduct the amount.' };
+          }
+        } else {
+          proWalletData = new WalletModel({
+            walletId: uuidv4(),
+            walletBy: proId,
+            walletDetails: [{
+              from: from,
+              amount: amount,
+              status: "Debited"
+            }],
+            totalAmount: -Number(amount) // Start with a negative balance if the wallet didn't exist
+          });
+        }
+  
+        if (userWalletData) {
+          userWalletData.totalAmount += Number(amount);
+          userWalletData.walletDetails.push({
+            from: proId,
+            amount: amount,
+            status: "Credited"
+          });
+        } else {
+          userWalletData = new WalletModel({
+            walletId: uuidv4(),
+            walletBy: from,
+            walletDetails: [{
+              from: proId,
+              amount: amount,
+              status: "Credited"
+            }],
+            totalAmount: Number(amount)
+          });
+        }
+  
+        console.log("userWalletData:", userWalletData);
+        
+        // Save updated Booking, Professional Wallet, and User Wallet data
+        await bookingData.save();
+        await proWalletData.save();
+        await userWalletData.save();
+  
+        return { success: true, message: 'Cancelled Booking successfully!!!' };
+      } else {
+        console.log("Booking not found");
+        return { success: false, message: 'Booking not found' };
+      }
+    } catch (error) {
+      console.error(error);
+      return { success: false, message: 'Error occurred while canceling the booking' };
     }
   }
   
+
 
 
 }

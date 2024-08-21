@@ -11,7 +11,7 @@ interface ProfessionalData {
   }
 
   interface IUpdateData{
-    newProfilePic? : string, 
+    profilePic? : string, 
     linkedinUrl? :string
 }
 
@@ -38,9 +38,9 @@ export class ProService{
     }
 
 
-    async isUserCalled(proId:string,userId:string):Promise<FunctionReturnType>{
+    async singlePro(userId:string):Promise<FunctionReturnType>{
 
-        const response = await ProRepository.isUserCalled(proId,userId);
+        const response = await ProRepository.singlePro(userId);
         return response
     }
 
@@ -72,5 +72,15 @@ export class ProService{
         return response
     }
 
+
+    async cancelBooking(slot:string,selectedDate:string,proId:string):Promise<any>{
+        try {
+            const response = await ProRepository.cancelBooking(slot,selectedDate,proId);
+            return response
+        } catch (error) {
+            console.log();
+            
+        }
+    }
 
 }

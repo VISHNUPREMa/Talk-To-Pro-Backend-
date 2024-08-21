@@ -2,11 +2,13 @@ import UserModel from '../models/userModel';
 import ProModel from '../models/proModel';
 import BookingModel from '../models/bookingModel';
 import TransactionModel from '../models/transactionModel';
+import WalletModel from '../models/walletModel';
 import { FunctionReturnType } from '../helper/reusable';
 import { ISubscription } from '../models/subscriptionModel';
 import SubscriptionModel from '../models/subscriptionModel';
 import ReviewModel from '../models/reviewModel';
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 
 
 
@@ -15,6 +17,15 @@ interface IReview {
   title: string;
   date: string;
   text: string;
+}
+
+
+interface IEditReview {
+  reviewerId: string;
+  reviewerName: string;
+  date: string;
+  title: string;
+  content: string;
 }
 
 export class UserNotificationRepo{
@@ -361,62 +372,55 @@ export class UserNotificationRepo{
     }
 
 
-    static async addReview(newReview:IReview,userId:string,id:string):Promise<any>{
+    static async addReview(newReview: IReview, userId: string, id: string): Promise<FunctionReturnType> {
       try {
-        const bookingData = await BookingModel.aggregate([
-          { $match: { providedBy: userId } },
-          { $unwind: '$slots' },
-          { $match: {
-            'slots.bookedBy': id,
-            'slots.status': 'Done'
-          }}
-        ]);
-       
-       
-        
-        
-        if(bookingData.length > 0 ){
-         
-        const {username,title,date,text} = newReview
-        const data = await ReviewModel.findOne({userId: userId});
-        if(data){
-          data.reviews.push({
-            
-              reviewerName: username,
-              date: date,
-              title: title,
-              content: text
-            
-          })
-          await data.save()
-          return {success : true , message:'Review added successfully'}
-        }else{
-          const data = await ReviewModel.create({userId: userId,
-                 reviews:[
-                  {
-            
-                    reviewerName: username,
-                    date: date,
-                    title: title,
-                    content: text
-                  
-                }
-                 ]
-        });
-          return {success : true , message:'Review added successfully'}
-
-        }
-        }else{
-          return {success:false,message:'you cannot add review without attend session !!!'}
-        }
-
-        
+          console.log("id : ", id);
+  
+          const bookingData = await BookingModel.aggregate([
+              { $match: { providedBy: userId } },
+              { $unwind: '$slots' },
+              { $match: {
+                  'slots.bookedBy': id,
+                  'slots.status': 'Done'
+              }}
+          ]);
+  
+          if (bookingData.length > 0) {
+              const { username, title, date, text } = newReview;
+              let data = await ReviewModel.findOne({ userId: userId });
+  
+              // Create the new review object
+              const newReviewData = {
+                  reviewerId: id,
+                  reviewerName: username,
+                  date: date,
+                  title: title,
+                  content: text
+              };
+  
+              if (data) {
+                  // If the user already has reviews, push the new review
+                  data.reviews.push(newReviewData);
+                  console.log("data : ", data.reviews);
+                  await data.save();
+              } else {
+                  // If the user does not have any reviews yet, create a new document
+                  data = await ReviewModel.create({
+                      userId: userId,
+                      reviews: [newReviewData]
+                  });
+              }
+  
+              return { success: true, message: 'Review added successfully', data: newReviewData };
+          } else {
+              return { success: false, message: 'You cannot add a review without attending the session!' };
+          }
       } catch (error) {
-        console.log(error);
-        return {success:false,data:error,message:'error occur while save review'}
-        
+          console.log(error);
+          return { success: false, data: error, message: 'Error occurred while saving review' };
       }
-    }
+  }
+  
 
 
     static async fetchRating(userId:string):Promise<FunctionReturnType>{
@@ -440,6 +444,196 @@ export class UserNotificationRepo{
         
       }
     }
+
+
+    static async editReview(editedReview:IEditReview , userId:string):Promise<FunctionReturnType>{
+      try {
+        console.log("editedReview : ",editedReview,userId);
+        const reviewData = await ReviewModel.findOneAndUpdate(
+          {
+            userId: userId,
+            'reviews.reviewerName': editedReview.reviewerName
+          },
+          {
+            $set: {
+              'reviews.$.reviewerId':editedReview.reviewerId,
+              'reviews.$.title': editedReview.title,
+              'reviews.$.content': editedReview.content,
+              'reviews.$.updatedAt': new Date()
+            }
+          },
+          { new: true }  
+        );
+
+        if(reviewData){
+          return {success:true}
+        }else{
+          return {success: false}
+        }
+        
+        
+      } catch (error) {
+        console.log(error);
+        return {success:false}
+        
+      }
+    }
+
+
+    static async deleteReview(review: IEditReview, userId: string): Promise<FunctionReturnType> {
+      try {
+          // Find the document and remove the review that matches the reviewerName
+          const deleteReviewData = await ReviewModel.findOneAndUpdate(
+              { userId: userId },
+              {
+                  $pull: {
+                      reviews: {
+                          reviewerName: review.reviewerName,
+                          title: review.title,  // Add more conditions if necessary
+                          content:review.content
+                        
+                      }
+                  }
+              },
+              { new: true } // This option returns the modified document rather than the original
+          )
+          if (deleteReviewData) {
+              return { success: true };
+          } else {
+              return { success: false };
+          }
+      } catch (error) {
+          console.log(error);
+          return { success: false };
+      }
+  }
+
+
+  static async cancelBooking(
+    bookingId: string,
+    cancelBy: string,
+    time: string,
+    date: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const bookingData = await BookingModel.findOne(
+        { bookingId: bookingId },
+        { _id: 0, __v: 0 }
+      );
+  
+      if (!bookingData) {
+        return { success: false, message: 'Booking not found.' };
+      }
+  
+      const dateOnly = new Date(date).toISOString().split('T')[0]; 
+      const bookingDateTime = new Date(`${dateOnly} ${time}`);
+      const currentDateTime = new Date();
+  
+      if (bookingDateTime <= currentDateTime) {
+        return { success: false, message: 'Cannot cancel a slot in the past.' };
+      }
+  
+      const slotIndex = bookingData.slots.findIndex(
+        (slot) => slot.time === time && new Date(bookingData.date).toISOString().split('T')[0] === dateOnly
+      );
+  
+      if (slotIndex !== -1) {
+        const bookedBy = bookingData.slots[slotIndex].bookedBy;
+        const refundAmount = bookingData.slots[slotIndex].amount;
+  
+        if (!refundAmount) {
+          return { success: false, message: 'Refund amount is missing or undefined.' };
+        }
+  
+        // Update the slot status to 'Cancelled'
+        bookingData.slots[slotIndex].status = 'Cancelled';
+        await BookingModel.updateOne(
+          { bookingId: bookingId, "slots.time": time, date: date },
+          { $set: { "slots.$.status": 'Cancelled' } }
+        );
+  
+    
+        
+    
+  
+        return { success: true, message: 'Cancelled slot successfully !' };
+      } else {
+        return { success: false, message: 'Slot not found!' };
+      }
+    } catch (error) {
+      console.error(error);
+      return { success: false, message: 'Error occurred while canceling the slot.' };
+    }
+  }
+  
+  
+  static async fetchWallet(userId:string):Promise<FunctionReturnType>{
+    try {
+      console.log("id : ",userId);
+      
+      const walletData = await WalletModel.aggregate([
+        { $match: { walletBy: userId } },
+        { $unwind: "$walletDetails" },
+        
+         { $lookup: {
+            from: "users", // Collection name where usernames are stored
+            localField: "walletDetails.from", // Field in walletDetails to match
+            foreignField: "userId", // Field in the users collection
+            as: "userDetails",
+          }},
+          { $unwind: "$userDetails" },
+          {
+            $project: {
+              _id:0,
+              walletId: 1,
+              "walletDetails.amount": 1,
+              "walletDetails.status": 1,
+              "walletDetails.from": "$userDetails.username", // Replace `from` with `username`
+              totalAmount: 1,
+            }}
+      ]);
+        
+      console.log("wallet data : ",walletData);
+      
+     
+        return {success:true,data:walletData}
+      
+      
+    } catch (error) {
+      console.log(error);
+
+      return {success:false,message:'error while fetch wallet data '}
+      
+    }
+  }
+
+
+  static async updateWallet(amount:number,id:string):Promise<FunctionReturnType>{
+    try {
+      console.log("amount : ",amount);
+      
+      const walletData = await WalletModel.findOneAndUpdate(
+        { walletBy: id },
+        { $inc: { totalAmount: Number(amount) } },  // Correct usage of $inc
+        { new: true }  // Option to return the updated document
+      );
+      console.log("wallet data : ",walletData);                              
+  if(walletData){
+    console.log("wallet data : ",walletData);
+    
+       return {success:true}
+  }else{
+    return {success:false}
+  }      
+    } catch (error) {
+      console.log(error);
+      return {success:false}
+      
+    }
+  }
+  
+  
+  
     
     
 }

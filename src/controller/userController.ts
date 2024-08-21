@@ -1,15 +1,21 @@
-import { Request, Response } from "express";
+import { Request, response, Response } from "express";
 import { UserService } from "../services/userService";
 import { UserNotificationService } from "../services/userNotificationService";
+import { PaymentService } from '../services/paymentService';
+import { UserFavouriteService } from "../services/userFavouriteService";
 
 
 class UserController {
   private userService: UserService;
   private userNotificationService: UserNotificationService;
+  private paymentService : PaymentService;
+  private userFavouriteService : UserFavouriteService;
 
-  constructor(userService: UserService,userNotificationService: UserNotificationService) {
+  constructor(userService: UserService,userNotificationService: UserNotificationService,paymentService: PaymentService , userFavouriteService : UserFavouriteService) {
     this.userService = userService;
     this.userNotificationService = userNotificationService;
+    this.paymentService = paymentService;
+    this.userFavouriteService = userFavouriteService;
   }
 
   async signupUser(req: Request, res: Response) {
@@ -54,16 +60,9 @@ try {
   
   const {email , password} = req.body;
   const data = await this.userService.loginUserData(email,password);
-  console.log("data : ",data);
-  
-  if (data.message=== 'User not found') {
-    const status = 404 || 401;
-    return res.status(status).json({ error: data });
-  }
+   res.json(data)
   
  
-  
-  res.status(200).json({ message: 'Login successful', data });
 } catch (error) {
   console.log("loginUser  data error : ",error);
   
@@ -320,11 +319,103 @@ try {
   }
 
 
+  async editReview(req: Request, res: Response){
+    try {
+      const {editedReview,userId} = req.body;
+      const response = await this.userNotificationService.editReview(editedReview,userId)
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
 
+  
+  async deleteReview(req: Request, res: Response){
+    try {
+      const {review,userId} = req.body;
+      console.log([review,userId]);
+      
+      const response = await this.userNotificationService.deleteReview(review,userId)
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+
+  async cancelBooking(req: Request, res: Response){
+    try {
+      const {bookingId,cancelBy,time,date} = req.body;
+      const response = await this.userNotificationService.cancelBooking(bookingId,cancelBy,time,date)
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+
+  async fetchWallet(req: Request, res: Response){
+    try {
+      const {userId} = req.body;
+      const response = await this.userNotificationService.fetchWallet(userId);
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+
+  async createOrder(req: Request, res: Response) {
+    try {
+      const { amount } = req.body;
+      const order = await this.paymentService.createOrder(amount);
+      res.status(200).json(order);
+    } catch (error:any) {
+      console.error('Error creating Razorpay order:', error);
+      res.status(500).json({ message: 'Failed to create order', error: error.message });
+    }
+  }
+
+  async verifyPayment(req: Request, res: Response) {
+    try {
+      const { orderId, paymentId, signature ,amount,id} = req.body;
+      const isValid = this.paymentService.verifyPaymentSignature(orderId, paymentId, signature);
+      if (isValid) {
+       
+        
+        const response = await this.userNotificationService.updateWallet(amount,id);
+        if(response){
+          console.log("response : ",response);
+          
+          res.status(200).json({ message: 'Payment verified successfully' });
+        }
+        
+      } else {
+        res.status(400).json({ message: 'Payment verification failed' });
+      }
+    } catch (error:any) {
+      console.error('Error verifying payment:', error);
+      res.status(500).json({ message: 'Payment verification failed', error: error.message });
+    }
+  }
+
+  async allFavourites(req: Request, res: Response) {
+    try {
+      const {id} = req.body;
+      const response = await this.userFavouriteService.allFavourites(id)
+      res.json(response)
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
 
 }
 
-export const userController = new UserController(new UserService(), new UserNotificationService());
+export const userController = new UserController(new UserService(), new UserNotificationService() ,new PaymentService(), new UserFavouriteService());
 
 
 

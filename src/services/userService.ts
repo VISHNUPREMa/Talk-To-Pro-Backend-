@@ -175,7 +175,7 @@ export class UserService {
                 // Schedule the task
                 console.log("subscription : ",subscription);
                 
-                cron.schedule('*/5 * * * *', () => {
+                cron.schedule(cronExpression, () => {
                     console.log("Immediate task executed");
                     webpush.sendNotification(subscription.subscriptions, payload)
                         .then(() => console.log('Notification sent successfully'))

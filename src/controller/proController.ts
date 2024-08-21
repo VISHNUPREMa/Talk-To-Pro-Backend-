@@ -56,10 +56,10 @@ class ProController{
         }
     }
 
-    async isUserCalled(req:Request,res:Response){
+    async singlePro(req:Request,res:Response){
         try {
-            const {proId,userId} = req.body;
-           const response = await this.proService.isUserCalled(proId,userId)
+            const {userId} = req.body;
+           const response = await this.proService.singlePro(userId)
             res.json(response)
         } catch (error) {
            console.log(error);
@@ -140,6 +140,18 @@ class ProController{
         } catch (error) {
             console.log(error);
                  
+        }
+    }
+
+
+    async cancelBooking(req:Request,res:Response){
+        try {
+            const {slot,selectedDate,proId} = req.body;
+           const response = await this.proService.cancelBooking(slot,selectedDate,proId)
+           res.json(response)
+        } catch (error) {
+            console.log(error);
+            
         }
     }
 
