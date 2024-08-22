@@ -94,10 +94,10 @@ export class UserService {
 
 
 
-    async getProData():Promise<FunctionReturnType>{
+    async getProData(page: number, limit: number):Promise<FunctionReturnType>{
     
 
-            const proData = await UserRepository.getAllProData();
+            const proData = await UserRepository.getAllProData(page,limit);
             return proData
     }
 

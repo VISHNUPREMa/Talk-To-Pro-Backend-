@@ -14,7 +14,7 @@ router.post("/login/googleauth",userController.loginGoogleAuth.bind(userControll
 router.post("/forgetpassword/otp",userController.forgetPasswordEmail.bind(userController));
 router.post('/forgetpassword/verifyotp',userController.forgetPasswordOtp.bind(userController));
 router.post('/forgetpassword/resetpassword',userController.resetPassword.bind(userController))
-router.get('/cards', userController.getCards.bind(userController));  
+router.post('/cards', userController.getCards.bind(userController));  
 router.post('/getavailableslot',userController.getAvailableSlots.bind(userController));
 router.post('/bookslot',userController.bookSlot.bind(userController));
 router.post('/userbooking',userController.userBookings.bind(userController));

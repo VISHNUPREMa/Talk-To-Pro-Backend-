@@ -162,13 +162,21 @@ export class UserRepository {
   }
 
 
-  static async  getAllProData():Promise<FunctionReturnType>{
+  static async  getAllProData(page: number, limit: number):Promise<FunctionReturnType>{
     try {
       const allProData = await ProModel.find({
         isBlocked: false,
         $or: [{ isAdminVerified: true }, { isAdminVerified: { $exists: false } }]
+      })
+        .skip((page - 1) * limit)
+        .limit(limit);
+  
+      const totalCount = await ProModel.countDocuments({
+        isBlocked: false,
+        $or: [{ isAdminVerified: true }, { isAdminVerified: { $exists: false } }]
       });
-      return {success:true,data:allProData}
+  
+      return {success:true,data:{allProData,totalCount}}
       
       
     } catch (error) {

@@ -90,7 +90,10 @@ try {
                                                                               
   async getCards(req:Request , res:Response){
     try {
-      const cardData = await this.userService.getProData();
+      const { page, limit} = req.body;
+      
+      
+      const cardData = await this.userService.getProData(page,limit);
       if(cardData){
         res.status(200).json(cardData)
       }
