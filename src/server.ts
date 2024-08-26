@@ -12,7 +12,7 @@ import { createServer } from 'http';
 import handleSocketConnection from './helper/socketHandler';
 
 dotenv.config();
-
+      
 const app = express();
 const PORT = process.env.PORT || 5000;
 
