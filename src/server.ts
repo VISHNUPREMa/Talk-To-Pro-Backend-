@@ -22,7 +22,7 @@ const io = new Server(httpServer);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174','https://talk-to-pro-frontend-userside.vercel.app/login'], 
+  origin: ['http://localhost:5173', 'http://localhost:5174','https://talk-to-pro-frontend-userside.vercel.app'], 
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
 }));
@@ -32,9 +32,7 @@ app.use(adminRouter);
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
 connectDB();
-app.get("/",(req,res)=>{
-  res.send("hello world")
-})
+
 
 httpServer.listen(PORT, () => {
   console.log(`Server is listening at http://localhost:${PORT}`);
