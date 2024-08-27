@@ -148,7 +148,7 @@ export class UserNotificationRepo{
         
         console.log("id in userNotificationRepository : ",id);
         
-        const currentFormattedTime = new Intl.DateTimeFormat('en-US', {
+        const currentFormattedTime = new Intl.DateTimeFormat('en-IN', {
           hour: '2-digit',
           minute: '2-digit',
           hour12: true,
