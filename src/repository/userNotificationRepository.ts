@@ -144,7 +144,13 @@ export class UserNotificationRepo{
     static async callUser(id:string):Promise<FunctionReturnType>{
       try {
         const now = new Date();
-        console.log("now : ",now);
+        const ISTOffset = 5.5 * 60;  // IST is UTC +5:30, which is 330 minutes ahead
+
+// Create a new date object for IST
+const nowIST = new Date(now.getTime() + ISTOffset * 60 * 1000);
+
+console.log("UTC time : ", now);
+console.log("IST time : ", nowIST);
         
         console.log("id in userNotificationRepository : ",id);
         
