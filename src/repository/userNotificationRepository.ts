@@ -148,12 +148,7 @@ export class UserNotificationRepo{
 
 // Create a new date object for IST
 const nowIST = new Date(now.getTime() + ISTOffset * 60 * 1000);
-
-console.log("UTC time : ", now);
-console.log("IST time : ", nowIST);
-        
-        console.log("id in userNotificationRepository : ",id);
-        
+  
         const currentFormattedTime = new Intl.DateTimeFormat('en-IN', {
           hour: '2-digit',
           minute: '2-digit',
@@ -161,9 +156,7 @@ console.log("IST time : ", nowIST);
         }).format(nowIST);
         const currentDate = now.toISOString().split('T')[0]; 
         
-        console.log(`Current time : ${currentFormattedTime}`);
-        console.log(`Current date: ${currentDate}`);
-        
+       
         
 
 
@@ -186,7 +179,7 @@ console.log("IST time : ", nowIST);
             }
           }
         ]);
-      console.log("bookingData : ",bookingData);
+    
       
         
         if(bookingData[0].slots.status === 'Done'){

@@ -24,6 +24,8 @@ const handleSocketConnection = (io: Server) => {
 
     socket.on('call-request', (data) => {
       const { from, room, to } = data;
+      console.log("data from call request : ",[from, room, to]);
+      
       io.to(connectedClients[to]).emit('call-request', { from, room, to });
     });
 
