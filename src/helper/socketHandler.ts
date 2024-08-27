@@ -4,8 +4,10 @@ const handleSocketConnection = (io: Server) => {
   let connectedClients: { [key: string]: string } = {}; // Mapping of user IDs to socket IDs
 
   io.on('connection', (socket) => {
-    // Store user ID with their socket ID
+   
     socket.on('on', ({ userid }) => {
+      console.log("connection is on : ");
+      
       connectedClients[userid] = socket.id;
     });
 
