@@ -144,7 +144,8 @@ export class UserNotificationRepo{
     static async callUser(id:string):Promise<FunctionReturnType>{
       try {
         const now = new Date();
-   
+        console.log("id in userNotificationRepository : ",id);
+        
         const currentFormattedTime = new Intl.DateTimeFormat('en-US', {
           hour: '2-digit',
           minute: '2-digit',
@@ -177,7 +178,7 @@ export class UserNotificationRepo{
             }
           }
         ]);
-      console.log(bookingData);
+      console.log("bookingData : ",bookingData);
       
         
         if(bookingData[0].slots.status === 'Done'){
