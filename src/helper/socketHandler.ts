@@ -25,6 +25,8 @@ const handleSocketConnection = (io: Server) => {
     });
 
     socket.on('call-request', (data) => {
+      console.log("reached here : ");
+      
       const { from, room, to } = data;
       console.log("data from call request : ",[from, room, to]);
       
