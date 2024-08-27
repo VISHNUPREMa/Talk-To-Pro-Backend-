@@ -144,16 +144,18 @@ export class UserNotificationRepo{
     static async callUser(id:string):Promise<FunctionReturnType>{
       try {
         const now = new Date();
+        console.log("now : ",now);
+        
         console.log("id in userNotificationRepository : ",id);
         
         const currentFormattedTime = new Intl.DateTimeFormat('en-US', {
           hour: '2-digit',
           minute: '2-digit',
           hour12: true,
-        }).format(now).slice(0,2);
+        }).format(now);
         const currentDate = now.toISOString().split('T')[0]; 
         
-        console.log(`Current time: ${currentFormattedTime}`);
+        console.log(`Current time : ${currentFormattedTime}`);
         console.log(`Current date: ${currentDate}`);
         
         
@@ -173,7 +175,7 @@ export class UserNotificationRepo{
             $match: {
               $and: [
                 { date: { $regex: currentDate } },
-                { "slots.time": { $regex: currentFormattedTime } }
+                { "slots.time": { $regex: currentFormattedTime.slice(0,2) } }
               ]
             }
           }
