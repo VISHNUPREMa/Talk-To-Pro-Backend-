@@ -158,7 +158,7 @@ console.log("IST time : ", nowIST);
           hour: '2-digit',
           minute: '2-digit',
           hour12: true,
-        }).format(now);
+        }).format(nowIST);
         const currentDate = now.toISOString().split('T')[0]; 
         
         console.log(`Current time : ${currentFormattedTime}`);
